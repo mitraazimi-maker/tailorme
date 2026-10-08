@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>tailor me</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;1,6..96,400;1,6..96,500&family=Inter+Tight:ital,wght@0,300;0,400;1,300&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+
+/* Layout: quiet-luxury editorial (after Refero's warm-cream editorial system): warm neutrals, light display sans, pill buttons, soft 20px cards; brass only for the wordmark, prices and the measuring tape. */
+:root{
+  --paper:#FDFCFC; --paper-2:#F5F3F1; --card:#FFFFFF; --ink:#0C0A08; --ink-2:#44403B; --muted:#777169; --line:#EBE8E4;
+  --tape:#B08A52; --tape-ink:#FDFCFC; --chalk:#3D5A9E; --good:#2F7A57; --warn:#A35A1C;
+  --dot:transparent; --shadow:rgba(0,0,0,.4) 0 0 1px 0,rgba(0,0,0,.04) 0 1px 1px 0,rgba(0,0,0,.04) 0 2px 4px 0,rgba(0,0,0,.05) 0 12px 32px -8px;
+  --f-display:"Inter Tight","Inter",system-ui,sans-serif;
+  --f-serif:"Bodoni Moda","Didot","Bodoni 72",Georgia,serif;
+  --f-body:"Inter",system-ui,sans-serif;
+  --f-mono:"Geist Mono","JetBrains Mono",ui-monospace,Menlo,monospace;
+  --r:20px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#11100E; --paper-2:#1B1917; --card:#1F1D1A; --ink:#F5F3F1; --ink-2:#CFC9C1; --muted:#A39D94; --line:#2E2B27;
+  --tape:#C9A46C; --tape-ink:#11100E; --chalk:#8FA8E0; --good:#5CC08F; --warn:#E0A060;
+  --dot:transparent; --shadow:rgba(0,0,0,.6) 0 0 1px 0,rgba(0,0,0,.3) 0 2px 4px 0,rgba(0,0,0,.35) 0 12px 32px -8px; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#11100E; --paper-2:#1B1917; --card:#1F1D1A; --ink:#F5F3F1; --ink-2:#CFC9C1; --muted:#A39D94; --line:#2E2B27;
+  --tape:#C9A46C; --tape-ink:#11100E; --chalk:#8FA8E0; --good:#5CC08F; --warn:#E0A060;
+  --dot:transparent; --shadow:rgba(0,0,0,.6) 0 0 1px 0,rgba(0,0,0,.3) 0 2px 4px 0,rgba(0,0,0,.35) 0 12px 32px -8px; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;letter-spacing:.01em;
+  background-image:radial-gradient(var(--dot) 1px,transparent 1.2px);background-size:18px 18px}
+.wrap{max-width:1160px;margin:0 auto;padding-inline:20px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.02em;font-weight:300}
+h1,h2{line-height:1.08}
+h3{font-family:var(--f-body);font-weight:500;letter-spacing:0;line-height:1.3}
+.serif-i{font-family:var(--f-serif);font-style:italic;font-weight:400;letter-spacing:-.01em}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--chalk);outline-offset:2px;border-radius:6px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.mono{font-family:var(--f-mono)}
+.num{font-variant-numeric:tabular-nums}
+
+/* demo banner */
+.demo{background:var(--paper-2);border-bottom:1px solid var(--line);color:var(--ink-2);font-size:13px;text-align:center;padding:7px 16px}
+.demo b{color:var(--ink)}
+
+/* header */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;gap:20px;height:64px}
+.logo{display:flex;align-items:baseline;gap:10px;font-size:28px;font-family:var(--f-serif);font-weight:500;font-style:italic;font-size:26px;letter-spacing:0;background:none;border:0;padding:0}
+.logo svg{flex:none}
+.nav-links{display:flex;gap:4px;margin-left:auto;align-items:center}
+.nav-links button:not(.btn){background:none;border:0;padding:8px 12px;border-radius:999px;font-weight:500;color:var(--ink-2)}
+.nav-links button:not(.btn):hover{color:var(--ink);background:var(--paper-2)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid transparent;border-radius:9999px;padding:12px 22px;font-weight:500;letter-spacing:.01em;font-size:15px;transition:transform .15s,background .15s}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--ink);color:var(--paper)}
+.btn-primary:hover{background:color-mix(in srgb,var(--ink) 82%,var(--paper))}
+.btn-ink{background:var(--ink);color:var(--paper)}
+.btn-ghost{background:var(--card);border:1px solid var(--line);color:var(--ink);box-shadow:var(--shadow)}
+.btn-ghost:hover{border-color:var(--ink)}
+.btn-sm{padding:8px 16px;font-size:14px}
+@media (max-width:720px){.nav-links .hide-sm{display:none}}
+
+/* measuring tape */
+.tape{height:26px;background:var(--tape);position:relative;overflow:hidden;border-block:1px solid color-mix(in srgb,var(--tape) 70%,#000)}
+.tape canvas{display:block;width:100%;height:100%}
+
+/* hero */
+.hero{padding-block:56px 40px}
+.hero-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:48px;align-items:center}
+@media (max-width:900px){.hero-grid{grid-template-columns:1fr;gap:32px}}
+.hero h1{font-size:clamp(44px,6.4vw,84px);line-height:1.02;font-weight:300;letter-spacing:-.02em}
+.hero h1 .hl{font-family:var(--f-serif);font-style:italic;font-weight:400;color:var(--tape);letter-spacing:-.01em}
+.hero .lede{font-size:19px;color:var(--ink-2);max-width:34ch;margin-top:18px}
+.search{margin-top:30px;background:var(--card);border:1px solid var(--line);border-radius:9999px;padding:8px;display:grid;grid-template-columns:1.4fr 1fr auto;gap:6px;box-shadow:var(--shadow)}
+.search label{display:flex;flex-direction:column;padding:6px 18px;border-radius:9999px;min-width:0}
+.search label:hover{background:var(--paper-2)}
+.search label span{font-size:11px;font-family:var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.search input{border:0;background:transparent;padding:2px 0;font-size:17px;font-weight:500;outline:none;min-width:0;width:100%}
+.search .btn{border-radius:9999px}
+@media (max-width:640px){.search{grid-template-columns:1fr;border-radius:24px}.search .btn{padding:14px}}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.chip{border:1px solid var(--line);background:var(--card);padding:7px 15px;border-radius:9999px;font-size:14px;font-weight:500}
+.chip:hover{border-color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+/* hero card: live quote ticket */
+.ticket{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);border:1px solid var(--line);position:relative;overflow:hidden}
+.ticket-head{padding:18px 20px;border-bottom:1px dashed var(--line);display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.ticket-head h3{font-size:18px}
+.ticket ul{list-style:none;margin:0;padding:6px 0}
+.ticket li{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:12px 20px}
+.ticket li+li{border-top:1px solid var(--paper-2)}
+.ticket .who{font-weight:600;line-height:1.2}
+.ticket .meta{font-size:13px;color:var(--ink-2)}
+.ticket .price{font-family:var(--f-mono);font-weight:600;font-size:17px}
+.ticket-foot{padding:12px 20px;background:var(--paper-2);font-size:13px;color:var(--ink-2);display:flex;gap:8px;align-items:center}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--good);box-shadow:0 0 0 0 var(--good);animation:pulse 2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.swatch{width:44px;height:44px;border-radius:10px;flex:none;border:1px solid var(--line)}
+
+/* sections */
+section.block{padding-block:88px}
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:20px;flex-wrap:wrap;margin-bottom:28px}
+.section-head h2{font-size:clamp(32px,3.6vw,48px);font-weight:300}
+.section-head p{color:var(--ink-2);max-width:46ch}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media (max-width:820px){.steps{grid-template-columns:1fr}}
+.step{padding:24px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.step .n{font-family:var(--f-mono);font-size:13px;color:var(--ink-2)}
+.step h3{font-size:20px}
+.step p{color:var(--ink-2)}
+
+/* categories */
+.cats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media (max-width:960px){.cats{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:460px){.cats{grid-template-columns:1fr}}
+.cat{background:var(--paper-2);border:1px solid transparent;border-radius:var(--r);padding:18px;text-align:left;display:flex;flex-direction:column;gap:12px;transition:border-color .15s,transform .15s}
+.cat:hover{border-color:var(--ink);transform:translateY(-2px)}
+.cat .pat{height:86px;border-radius:12px;border:1px solid var(--line)}
+.cat h3{font-size:18px;font-family:var(--f-body);font-weight:700;letter-spacing:0}
+.cat .range{font-family:var(--f-mono);font-size:13px;color:var(--ink-2)}
+
+/* tailor cards */
+.grid-t{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media (max-width:960px){.grid-t{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:620px){.grid-t{grid-template-columns:1fr}}
+.tcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;text-align:left;padding:0;transition:box-shadow .15s,transform .15s}
+.tcard:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+.tcard .cover{height:120px;position:relative}
+.tcard .badge-row{position:absolute;left:12px;bottom:12px;display:flex;gap:6px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:4px 9px;border-radius:999px;background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.pill.good{color:var(--good)}
+.pill.y{background:var(--ink);color:var(--paper);border-color:transparent}
+.tcard .body{padding:16px 18px 18px;display:flex;flex-direction:column;gap:8px;flex:1}
+.tcard h3{font-size:19px}
+.tcard .row{display:flex;justify-content:space-between;gap:10px;font-size:14px;color:var(--ink-2)}
+.stars{color:var(--ink);font-weight:700}
+.stars .s{color:var(--warn)}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.tag{font-size:12px;background:var(--paper-2);padding:3px 8px;border-radius:6px;color:var(--ink-2)}
+
+/* pricing guide */
+.guide{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow-x:auto}
+.guide table{width:100%;border-collapse:collapse;min-width:560px}
+.guide th,.guide td{padding:14px 20px;text-align:left;border-bottom:1px solid var(--paper-2)}
+.guide th{font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);font-weight:400}
+.guide td.p{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.guide tr:last-child td{border-bottom:0}
+.bar{height:6px;background:var(--paper-2);border-radius:3px;position:relative;min-width:120px}
+.bar i{position:absolute;top:0;bottom:0;background:var(--ink);border-radius:3px}
+
+/* maker CTA */
+.maker{background:var(--ink);color:var(--paper);border-radius:24px;padding:44px;display:grid;grid-template-columns:1.3fr 1fr;gap:32px;align-items:center}
+.maker h2{font-size:clamp(28px,3.4vw,40px)}
+.maker p{color:color-mix(in srgb,var(--paper) 75%,transparent);margin-top:12px}
+.maker .stats{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.maker .stat{border-top:1px solid color-mix(in srgb,var(--paper) 25%,transparent);padding-top:12px}
+.maker .stat b{font-family:var(--f-display);font-size:40px;font-weight:300;display:block;color:var(--tape)}
+@media (max-width:820px){.maker{grid-template-columns:1fr;padding:28px}}
+
+footer{padding-block:40px;color:var(--ink-2);font-size:14px;border-top:1px solid var(--line);margin-top:40px}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+/* results */
+.results-layout{display:grid;grid-template-columns:260px 1fr;gap:28px;padding-block:32px 64px}
+@media (max-width:860px){.results-layout{grid-template-columns:1fr}}
+.filters{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;align-self:start;position:sticky;top:84px}
+@media (max-width:860px){.filters{position:static}}
+.fsum{font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between}.fsum::after{content:'+';font-family:var(--f-mono)}details[open] .fsum::after{content:'−'}@media (min-width:861px){.fsum{display:none}}.fbody{display:flex;flex-direction:column;gap:18px}@media (max-width:860px){details[open] .fbody{margin-top:14px}}
+.filters h4{margin:0 0 8px;font-size:12px;font-family:var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);font-weight:400}
+.check{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:15px;cursor:pointer}
+.check input{width:18px;height:18px;accent-color:var(--ink)}
+.range-out{font-family:var(--f-mono);font-size:13px;float:right}
+input[type=range]{width:100%;accent-color:var(--ink)}
+.results-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.results-head h1{font-size:28px}
+.sel{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 12px}
+.list{display:flex;flex-direction:column;gap:14px}
+.lrow{background:var(--card);border:1px solid var(--line);border-radius:var(--r);display:grid;grid-template-columns:150px 1fr auto;gap:20px;padding:16px;text-align:left;align-items:center;transition:border-color .15s}
+.lrow:hover{border-color:var(--ink)}
+.lrow .cover{height:120px;border-radius:10px;border:1px solid var(--line)}
+.lrow .info{min-width:0;display:flex;flex-direction:column;gap:6px}
+.lrow h3{font-size:20px}
+.lrow .bio{color:var(--ink-2);font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lrow .side{display:flex;flex-direction:column;align-items:flex-end;gap:10px;text-align:right}
+.lrow .from{font-size:13px;color:var(--ink-2)}
+.lrow .from b{display:block;font-family:var(--f-mono);font-size:22px;color:var(--ink)}
+@media (max-width:640px){.lrow{grid-template-columns:1fr}.lrow .side{align-items:flex-start;text-align:left;flex-direction:row;justify-content:space-between;align-items:center}}
+.empty{padding:40px;text-align:center;color:var(--ink-2);background:var(--card);border:1px dashed var(--line);border-radius:var(--r)}
+
+/* profile */
+.crumb{background:none;border:0;padding:0;color:var(--ink-2);font-weight:500;margin-top:24px}
+.crumb:hover{color:var(--ink)}
+.prof-hero{height:200px;border-radius:20px;margin-top:16px;border:1px solid var(--line)}
+.prof-grid{display:grid;grid-template-columns:1fr 340px;gap:36px;padding-block:28px 64px}
+@media (max-width:900px){.prof-grid{grid-template-columns:1fr}}
+.prof-main{min-width:0;display:flex;flex-direction:column;gap:36px}
+.prof-title h1{font-size:clamp(34px,4.4vw,50px);font-weight:300}
+.prof-title .row{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;color:var(--ink-2);font-size:15px;align-items:center}
+.prof-main h2{font-size:32px;font-weight:300;margin-bottom:14px}
+.svc{display:flex;flex-direction:column}
+.svc .it{display:flex;align-items:baseline;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.svc .it .dots{flex:1;border-bottom:1.5px dotted var(--line);transform:translateY(-4px)}
+.svc .it .pr{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.svc .it small{color:var(--ink-2);display:block;font-size:13px}
+.gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.gallery div{aspect-ratio:1;border-radius:10px;border:1px solid var(--line);max-width:100%}
+@media (max-width:520px){.gallery{grid-template-columns:repeat(2,1fr)}}
+.review{padding:18px 0;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.review .h{display:flex;justify-content:space-between;gap:10px;font-size:14px;color:var(--ink-2)}
+.review .h b{color:var(--ink)}
+.review .job{font-size:12px;font-family:var(--f-mono);color:var(--ink-2)}
+.score{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center;margin-bottom:6px}
+.score .big{font-family:var(--f-display);font-size:56px;font-weight:300;line-height:1}
+.score .bars{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--ink-2)}
+.score .bars div{display:grid;grid-template-columns:110px 1fr 30px;gap:10px;align-items:center}
+.book{position:sticky;top:84px;align-self:start;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px}
+@media (max-width:900px){.book{position:static}}
+.book h3{font-size:22px}
+.book .facts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.book .facts div{background:var(--paper-2);border-radius:10px;padding:10px 12px}
+.book .facts small{display:block;font-size:11px;font-family:var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.book .facts b{font-size:15px}
+
+/* wizard */
+.wiz{max-width:720px;margin:0 auto;padding-block:40px 80px}
+.wiz-progress{margin-bottom:28px}
+.wiz-progress .lbl{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:12px;color:var(--ink-2);margin-bottom:8px}
+.wtape{height:22px;border-radius:4px;background:var(--paper-2);border:1px solid var(--line);position:relative;overflow:hidden}
+.wtape .fill{position:absolute;inset:0 auto 0 0;background:var(--tape);transition:width .35s ease;
+  background-image:repeating-linear-gradient(90deg,rgba(42,34,8,.55) 0 1px,transparent 1px 10px),repeating-linear-gradient(90deg,rgba(42,34,8,.8) 0 1.5px,transparent 1.5px 50px);
+  background-size:auto 40%,auto 70%;background-repeat:repeat-x;background-position:0 0,0 0}
+.wiz h1{font-size:clamp(32px,4.4vw,46px);font-weight:300}
+.wiz .sub{color:var(--ink-2);margin-top:8px}
+.opts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:24px}
+@media (max-width:600px){.opts{grid-template-columns:repeat(2,1fr)}}
+.opt{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:16px;text-align:left;display:flex;flex-direction:column;gap:6px;min-height:96px}
+.opt:hover{border-color:var(--ink-2)}
+.opt[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);background:color-mix(in srgb,var(--tape) 10%,var(--card))}
+.opt b{font-size:16px}
+.opt small{color:var(--ink-2);font-size:13px}
+.field{display:flex;flex-direction:column;gap:6px;margin-top:18px}
+.field label{font-weight:600;font-size:15px}
+.field .hint{font-size:13px;color:var(--ink-2)}
+.inp{border:1.5px solid var(--line);background:var(--card);border-radius:12px;padding:12px 14px;font-size:16px;width:100%}
+.inp:focus{border-color:var(--ink);outline:none}
+textarea.inp{min-height:110px;resize:vertical}
+.drop{border:2px dashed var(--line);border-radius:14px;padding:26px;text-align:center;color:var(--ink-2);background:var(--card);cursor:pointer}
+.drop:hover,.drop.over{border-color:var(--ink);color:var(--ink)}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.thumbs img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.wiz-nav{display:flex;justify-content:space-between;margin-top:32px;gap:12px}
+.err{color:var(--warn);font-size:14px;margin-top:10px;min-height:1em}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:560px){.two{grid-template-columns:1fr}}
+.summary{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 18px;margin-top:22px}
+.summary div{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--paper-2);font-size:15px}
+.summary div:last-child{border-bottom:0}
+.summary span{color:var(--ink-2)}
+.summary b{text-align:right}
+.done{text-align:center;padding-block:30px}
+.done .tick{width:84px;height:84px;border-radius:50%;background:var(--ink);display:grid;place-items:center;margin:0 auto 22px}
+.est{display:flex;gap:10px;align-items:center;background:var(--paper-2);border-radius:12px;padding:12px 14px;margin-top:18px;font-size:14px}
+.est b{font-family:var(--f-mono)}
+
+/* disclaimer */
+.disc{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.45;color:var(--ink);background:color-mix(in srgb,var(--tape) 22%,var(--card));border:1px solid color-mix(in srgb,var(--tape) 70%,var(--line));border-radius:10px;padding:10px 12px;text-align:left}
+.disc svg{flex:none;margin-top:1px;color:var(--warn)}
+.ack{display:flex;gap:10px;align-items:flex-start;margin-top:14px;font-size:15px;cursor:pointer}.ack input{width:18px;height:18px;margin-top:3px;accent-color:var(--ink);flex:none}
+.req{color:var(--warn);font-weight:600;font-size:13px}
+.thumbs .th{position:relative}.thumbs .th button{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:var(--ink);color:var(--paper);font-size:13px;line-height:1}
+.job-photo{width:56px;height:56px;border-radius:10px;object-fit:cover;border:1px solid var(--line);flex:none}
+.intro-note{font-size:13.5px;color:var(--ink-2);margin-top:12px;line-height:1.45}
+.standard{display:grid;grid-template-columns:1fr 1.1fr;gap:48px;padding:48px;background:var(--paper-2);border-radius:24px}
+.standard h2{font-size:clamp(32px,3.6vw,48px);font-weight:300}
+.standard p{color:var(--ink-2);margin-top:14px;max-width:40ch}
+.std-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.std-list li{padding:16px 0;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
+.std-list li:first-child{padding-top:0}
+.std-list b{font-family:var(--f-body);font-weight:600;font-size:18px}
+.std-list span{color:var(--ink-2)}
+@media (max-width:820px){.standard{grid-template-columns:1fr;padding:28px;gap:24px}}
+.mytailor{display:flex;gap:12px;align-items:center;padding:12px 14px;background:var(--paper-2);border-radius:12px;font-size:14px;color:var(--ink-2)}
+.wordmark{font-style:normal;font-weight:500;letter-spacing:-.01em}
+.wordmark i{color:var(--tape);font-style:italic;font-weight:400}
+.btn-brand{text-transform:none;letter-spacing:0;font-family:var(--f-serif);font-size:19px;font-weight:500;padding-block:9px}
+.btn-brand i{color:var(--tape);font-weight:400}
+.btn-brand.btn-sm{font-size:17px;padding-block:6px}
+.cat .pat,.tcard .cover,.lrow .cover,.swatch,.prof-hero,.gallery div{filter:saturate(.6)}
+/* toast */
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--paper);padding:12px 18px;border-radius:12px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:50;max-width:calc(100% - 32px)}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.view{animation:in .3s ease both}
+@keyframes in{from{opacity:.4;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="demo">Prototype · <b>sample tailors and reviews</b> are illustrative, not real businesses</div>
+
+<header class="top">
+  <div class="wrap nav">
+    <button class="logo" id="logo" aria-label="tailor me home">
+      <span class="wordmark">tailor <i>me</i></span>
+    </button>
+    <nav class="nav-links">
+      <button class="hide-sm" data-go="results">Find a tailor</button>
+      <button class="hide-sm" data-scroll="pricing">Price guide</button>
+      <button class="hide-sm" data-scroll="makers">For tailors</button>
+      <button class="btn btn-primary btn-sm btn-brand" data-go="post" aria-label="Tailor me: get quotes">tailor <i>me</i></button>
+    </nav>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<footer>
+  <div class="wrap">
+    <span>tailor me · Sydney · Everyday alterations and repairs. tailor me is an introduction service. Tailors are independent businesses, not employees or agents of tailor me.</span>
+    <span class="mono">Prototype v0.1</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ---------- fabric patterns (CSS backgrounds, theme-safe) ---------- */
+const FAB = {
+  pinstripe:(a,b)=>`repeating-linear-gradient(90deg,${a} 0 14px,${b} 14px 15px)`,
+  houndstooth:(a,b)=>`conic-gradient(from 45deg at 50% 50%,${a} 0 25%,${b} 0 50%,${a} 0 75%,${b} 0) 0 0/16px 16px`,
+  herringbone:(a,b)=>`repeating-linear-gradient(45deg,${a} 0 6px,${b} 6px 8px) 0 0/16px 16px, ${a}`,
+  check:(a,b)=>`repeating-linear-gradient(0deg,transparent 0 18px,${b} 18px 22px),repeating-linear-gradient(90deg,${a} 0 18px,${b} 18px 22px)`,
+  linen:(a,b)=>`repeating-linear-gradient(0deg,${b} 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,${b} 0 1px,${a} 1px 3px)`,
+  lace:(a,b)=>`radial-gradient(circle at 50% 50%,${b} 0 3px,transparent 3.5px) 0 0/14px 14px,radial-gradient(circle at 50% 50%,transparent 0 5px,${b} 5.5px 6.2px,transparent 6.5px) 7px 7px/14px 14px,${a}`,
+  denim:(a,b)=>`repeating-linear-gradient(-60deg,${a} 0 2px,${b} 2px 3px)`,
+  tartan:(a,b)=>`repeating-linear-gradient(0deg,${b}88 0 6px,transparent 6px 26px),repeating-linear-gradient(90deg,${b}88 0 6px,transparent 6px 26px),${a}`
+};
+const fab=(p,a,b)=>FAB[p](a,b);
+
+/* ---------- data (sample) ---------- */
+const CATS=[
+  {id:'hems',name:'Hems & shortening',range:'$14 – $40',pat:['linen','#E7E2D6','#CFC8B6'],desc:'Trousers, dresses, skirts, sleeves'},
+  {id:'fit',name:'Take in / let out',range:'$25 – $70',pat:['pinstripe','#2B3245','#8A93A8'],desc:'Waists, side seams, shirts'},
+  {id:'zips',name:'Zips & buttons',range:'$10 – $45',pat:['houndstooth','#1E2230','#E9E5DA'],desc:'Broken zips, missing buttons'},
+  {id:'repair',name:'Repairs & mending',range:'$12 – $50',pat:['herringbone','#5B4636','#7A604B'],desc:'Tears, holes, split seams'},
+  {id:'denim',name:'Jeans & denim',range:'$18 – $38',pat:['denim','#2D4A7A','#4E6EA3'],desc:'Original hems, crotch repairs'},
+  {id:'uniform',name:'School & work uniforms',range:'$12 – $30',pat:['tartan','#1F4D3A','#E2B33A'],desc:'Hems, name tags, patches'},
+  {id:'home',name:'Curtains & homewares',range:'$25 – $90',pat:['check','#DCE5F2','#6E8BBE'],desc:'Curtain hems, cushion covers'},
+  {id:'express',name:'Same-day express',range:'+30% rush',pat:['check','#E9DCC6','#B08A52'],desc:'Need it by tonight'}
+];
+const T=[
+  {id:'lt',name:'Linh’s Alteration Studio',suburb:'Marrickville',km:6.0,rating:4.88,reviews:521,resp:'~10 min',from:15,years:12,
+   cats:['hems','denim','zips','express'],flags:['ABN checked','Same day'],mobile:false,express:true,langs:['English','Vietnamese'],
+   pat:['denim','#2D4A7A','#4E6EA3'],bio:'Fast, fair, no fuss. Jeans hemmed with the original hem kept, zips swapped while you wait, and same-day turnaround on most jobs before 11am.',
+   svc:[['Jeans hem, original hem kept','',24],['Zip replacement (trousers)','',28],['Zip replacement (jacket)','',45],['Same-day rush','Drop off before 11am','+30%']]},
+  {id:'mm',name:'Mariam’s Sewing Room',suburb:'Paddington',km:1.2,rating:4.94,reviews:186,resp:'~20 min',from:14,years:22,
+   cats:['hems','fit','repair'],flags:['ABN checked','Home studio'],mobile:true,express:false,langs:['English','Arabic'],
+   pat:['linen','#E7E2D6','#CFC8B6'],bio:'Home-based seamstress around the corner from Oxford Street. Dress and skirt hems, taking in, and small repairs. Will pick up from nearby streets.',
+   svc:[['Dress or skirt hem','',30],['Take in at side seams','',40],['Shorten sleeves','',28],['Repair split seam','',16]]},
+  {id:'ra',name:'Ricci Alterations',suburb:'Leichhardt',km:5.4,rating:4.9,reviews:388,resp:'~1 hr',from:18,years:31,
+   cats:['hems','fit','zips'],flags:['ABN checked','Suit trousers'],mobile:false,express:true,langs:['English','Italian'],
+   pat:['pinstripe','#2B3245','#8A93A8'],bio:'Work trousers and suit pants hemmed properly, waists taken in, jacket sleeves shortened. Most jobs ready in two days.',
+   svc:[['Trouser hem (plain or cuffed)','',18],['Trouser waist take-in','',30],['Jacket sleeves shortened','',50],['Replace trouser zip','',26]]},
+  {id:'sm',name:'Sew Mended',suburb:'Newtown',km:4.2,rating:4.81,reviews:263,resp:'~40 min',from:12,years:7,
+   cats:['repair','zips','home'],flags:['ABN checked','Mending'],mobile:false,express:false,langs:['English'],
+   pat:['herringbone','#5B4636','#7A604B'],bio:'Darning, patching and mending for clothes you want to keep wearing. Knitwear holes, torn pockets, and cushion covers.',
+   svc:[['Darn a hole (knitwear)','Per hole',15],['Patch a tear','',22],['Replace pocket lining','',25],['Button set replaced','Up to 6',12]]},
+  {id:'bq',name:'Bondi Quick Stitch',suburb:'Bondi Junction',km:3.3,rating:4.86,reviews:142,resp:'~30 min',from:14,years:9,
+   cats:['hems','denim','repair','express'],flags:['ABN checked','Same day'],mobile:false,express:true,langs:['English','Portuguese'],
+   pat:['check','#DCE5F2','#6E8BBE'],bio:'Hems, jeans and activewear in the Westfield precinct. Drop off on your way in, pick up on your way out.',
+   svc:[['Jeans hem','',20],['Activewear repair','Seams and small tears',18],['Shorten dress','',32],['Same-day rush','','+30%']]},
+  {id:'ku',name:'Kogarah Uniforms & Alterations',suburb:'Kogarah',km:14.6,rating:4.83,reviews:97,resp:'~2 hr',from:12,years:15,
+   cats:['uniform','hems','zips'],flags:['ABN checked','Uniforms'],mobile:false,express:false,langs:['English','Greek'],
+   pat:['tartan','#1F4D3A','#E2B33A'],bio:'School uniforms hemmed in bulk before term starts, plus work shirts and hi-vis repairs for local businesses.',
+   svc:[['School uniform hem','Per item',12],['School uniform bundle','5 items',50],['Sew on patches or badges','Per item',8],['Work shirt repair','',15]]},
+  {id:'pm',name:'Parramatta Mend & Hem',suburb:'Parramatta',km:21.5,rating:4.85,reviews:211,resp:'~1 hr',from:13,years:11,
+   cats:['hems','fit','home'],flags:['ABN checked','Curtains'],mobile:true,express:false,langs:['English','Hindi','Tamil'],
+   pat:['lace','#F4EFEA','#C9B9AA'],bio:'Everyday alterations and curtain hemming across Western Sydney. Blouse and kurta adjustments too.',
+   svc:[['Curtain hem','Per panel',28],['Blouse take-in','',30],['Trouser hem','',16],['Cushion cover made','',25]]},
+  {id:'cm',name:'Chen Express Alterations',suburb:'Chatswood',km:11.8,rating:4.79,reviews:604,resp:'~5 min',from:14,years:16,
+   cats:['hems','fit','zips','express','uniform'],flags:['ABN checked','Same day'],mobile:false,express:true,langs:['English','Mandarin','Cantonese'],
+   pat:['houndstooth','#1E2230','#E9E5DA'],bio:'Open 7 days in the shopping centre. Hems in an hour, suit pants next day, uniforms in bulk for schools and businesses.',
+   svc:[['Trouser hem, 1 hour','',18],['Dress shorten','',35],['School uniform bundle','5 items',60],['Suit trousers taper','',40]]}
+];
+const REV=[
+  ['Hannah W.','Dress hem','5','Dropped off Monday, ready Tuesday. The hem is invisible and she pressed it too.'],
+  ['Daniel P.','Work trouser hems','5','Three pairs of work pants hemmed for $54. Should have done this years ago.'],
+  ['Priya S.','Jacket zip','5','Zip replaced while I had a coffee. Cheaper than I expected.'],
+  ['Marco L.','Jeans hem','4','Kept the original hem so you can’t tell. Took a day longer than quoted but messaged me ahead of time.'],
+  ['Sophie T.','Knitwear darning','5','My favourite jumper had three moth holes. You honestly can’t find them now.']
+];
+const DISCLAIMER='Quotes are a guide only. The tailor must inspect the garment and how it is made before confirming the final price.';
+const disc=(extra='')=>`<div class="disc" ${extra}><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9 5v5M9 12.5v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>${DISCLAIMER}</span></div>`;
+const INTRO='tailor me introduces you to independent tailors. Any agreement, the work and payment are between you and the tailor. tailor me is not a party to that agreement.';
+const JOBS=[['Hem trousers','hems'],['Take in a dress','fit'],['Replace a zip','zips'],['Fix a tear','repair'],['Shorten jeans','denim'],['School uniform','uniform'],['Curtain hems','home']];
+
+/* ---------- state ---------- */
+const S={view:'home',query:'',suburb:'Paddington',cat:null,tailor:null,
+  f:{cats:new Set(),mobile:false,express:false,maxKm:25,minRating:0},sort:'match',
+  w:{step:0,garment:null,work:null,details:'',photos:[],when:null,where:'Paddington, NSW 2021',fitting:null,name:'',email:'',ack:false}};
+
+const $=s=>document.querySelector(s);
+const app=$('#app');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=v=>typeof v==='number'?'$'+v.toLocaleString('en-AU'):v;
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2600)}
+function go(v,extra={}){Object.assign(S,extra);S.view=v;render();window.scrollTo({top:0,behavior:'instant'})}
+
+/* ---------- measuring tape canvas ---------- */
+function drawTapes(){
+  document.querySelectorAll('.tape canvas').forEach(c=>{
+    const dpr=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;c.width=w*dpr;c.height=h*dpr;
+    const x=c.getContext('2d');x.scale(dpr,dpr);x.strokeStyle='#2A2208';x.fillStyle='#2A2208';x.font='600 10px "JetBrains Mono",monospace';
+    const mm=4;let cm=Number(c.dataset.start||0);
+    for(let i=0,px=8;px<w;i++,px+=mm){
+      const isCm=i%10===0,isHalf=i%5===0;const len=isCm?h*.55:isHalf?h*.38:h*.22;
+      x.lineWidth=isCm?1.4:1;x.beginPath();x.moveTo(px+.5,0);x.lineTo(px+.5,len);x.stroke();
+      if(isCm&&i>0){x.fillText(String(cm+i/10),px+3,h-7)}
+    }
+  });
+}
+const tape=(start=0)=>`<div class="tape" aria-hidden="true"><canvas data-start="${start}"></canvas></div>`;
+
+/* ---------- helpers ---------- */
+const stars=r=>`<span class="stars"><span class="s">★</span> ${r.toFixed(2)}</span>`;
+const catName=id=>CATS.find(c=>c.id===id)?.name||id;
+function tcard(t){
+  return `<button class="tcard" data-tailor="${t.id}">
+    <div class="cover" style="background:${fab(...t.pat)}"><div class="badge-row">${t.flags.map((f,i)=>`<span class="pill ${i===0?'good':''}">${i===0?'✓ ':''}${esc(f)}</span>`).join('')}</div></div>
+    <div class="body"><h3>${esc(t.name)}</h3>
+      <div class="row"><span>${esc(t.suburb)} · <span class="num">${t.km} km</span></span>${stars(t.rating)}</div>
+      <div class="row"><span>Replies ${t.resp}</span><span class="num">From <b style="color:var(--ink)">$${t.from}</b></span></div>
+      <div class="tags">${t.cats.slice(0,3).map(c=>`<span class="tag">${esc(catName(c))}</span>`).join('')}</div>
+    </div></button>`;
+}
+
+/* ---------- HOME ---------- */
+function home(){
+  const near=[...T].sort((a,b)=>b.rating*Math.log(b.reviews)-a.rating*Math.log(a.reviews)).slice(0,6);
+  const quotes=[T[1],T[0],T[7]];const qp=[22,24,18];
+  return `<div class="view">
+  <section class="hero"><div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow">Sydney’s neighbourhood tailors</div>
+      <h1 style="margin-top:14px">Your own tailor, <span class="hl">from $14.</span></h1>
+      <p class="lede">The hem, the zip, the jacket that never sat right. Send a photo and a local tailor takes care of it, usually with a quote inside the hour.</p>
+      <form class="search" id="heroSearch">
+        <label for="q"><span>What needs doing?</span><input id="q" placeholder="e.g. hem work trousers" value="${esc(S.query)}" autocomplete="off"></label>
+        <label for="sub"><span>Suburb</span><input id="sub" value="${esc(S.suburb)}" autocomplete="off"></label>
+        <button class="btn btn-primary btn-brand" type="submit" aria-label="Tailor me: find tailors">tailor <i>me</i></button>
+      </form>
+      <div class="chips">${JOBS.map(([j,c])=>`<button class="chip" data-job="${esc(j)}" data-cat="${c}">${esc(j)}</button>`).join('')}</div>
+    </div>
+    <div class="ticket" aria-label="Example job with quotes">
+      <div class="ticket-head"><div><div class="eyebrow">Example job · Paddington</div><h3 style="margin-top:4px">Hem a pair of work trousers, 4 cm</h3></div><span class="pill y">3 quotes</span></div>
+      <ul>${quotes.map((t,i)=>`<li><div class="swatch" style="background:${fab(...t.pat)}"></div><div><div class="who">${esc(t.name)}</div><div class="meta">${stars(t.rating)} · ${t.km} km · ready ${['Thu','Today','Tomorrow'][i]}</div></div><div class="price">$${qp[i]}</div></li>`).join('')}</ul>
+      <div class="ticket-foot"><span class="pulse"></span> Quotes arrived in 14 min · $5 booking fee only if you book</div>
+      <div style="padding:12px 16px 16px">${disc()}</div>
+    </div>
+  </div></section>
+  ${tape(0)}
+  <section class="block"><div class="wrap">
+    <div class="section-head"><h2>How it works</h2><p>No calling around. No guessing what it will cost.</p></div>
+    <div class="steps">
+      <div class="step"><span class="n">Step 1</span><h3>Describe the job</h3><p>Pick the garment and the work, add at least one photo and your timeline. Takes about two minutes.</p></div>
+      <div class="step"><span class="n">Step 2</span><h3>Compare quotes</h3><p>Up to three independent tailors reply with a guide price and a ready date. The final price is confirmed once they inspect the garment.</p></div>
+      <div class="step"><span class="n">Step 3</span><h3>Drop off or book a fitting</h3><p>Accept the quote you like for a flat $5 booking fee. Visit the studio or have them come to you. You deal with the tailor directly from there.</p></div>
+    </div>
+  </div></section>
+  <section class="block" style="padding-top:0"><div class="wrap">
+    <div class="standard">
+      <div><div class="eyebrow" style="color:var(--tape)">The tailor me standard</div><h2 style="margin-top:12px">The tailor experience, at alteration prices.</h2><p>Every tailor me Club member agrees to four simple things. It’s what makes a $20 hem feel like a visit to your own tailor.</p></div>
+      <ul class="std-list">
+        <li><b>A reply within two hours</b><span>during opening hours, with a guide price and a ready date.</span></li>
+        <li><b>Ready when promised</b><span>or a message before the day, never after.</span></li>
+        <li><b>Pressed and ready to wear</b><span>every garment comes back pressed, not crumpled in a bag.</span></li>
+        <li><b>Remembers your fit</b><span>your tailor keeps your measurements on tailor me, so next time it’s one tap.</span></li>
+      </ul>
+    </div>
+  </div></section>
+  <section class="block" style="padding-top:0"><div class="wrap">
+    <div class="section-head"><h2>What can we help with?</h2><p>Typical Sydney prices, based on the quotes tailors post.</p></div>
+    <div class="cats">${CATS.map(c=>`<button class="cat" data-catgo="${c.id}"><div class="pat" style="background:${fab(...c.pat)}"></div><div><h3>${esc(c.name)}</h3><div style="color:var(--ink-2);font-size:14px">${esc(c.desc)}</div></div><div class="range">${c.range}</div></button>`).join('')}</div>
+  </div></section>
+  <section class="block" style="padding-top:0"><div class="wrap">
+    <div class="section-head"><h2>Tailors near ${esc(S.suburb)}</h2><button class="btn btn-ghost btn-sm" data-go="results">See all tailors →</button></div>
+    <div class="grid-t">${near.map(tcard).join('')}</div>
+  </div></section>
+  <section class="block" id="pricing" style="padding-top:0"><div class="wrap">
+    <div class="section-head"><h2>What should it cost?</h2><p>Median quotes in Sydney. Bar shows the typical spread.</p></div>
+    <div class="guide"><table>
+      <thead><tr><th>Job</th><th>Typical</th><th>Range</th><th style="width:30%">Spread</th></tr></thead>
+      <tbody>${[['Trouser hem',20,14,35],['Jeans hem, original kept',24,18,38],['Dress or skirt hem',32,22,48],['Take in at side seams',40,25,70],['Zip replacement',28,10,45],['Patch or darn a hole',18,12,35],['School uniform hem',12,10,20],['Curtain hem (per panel)',30,25,60]].map(([j,m,lo,hi])=>{const max=75;return `<tr><td>${j}</td><td class="p"><b>$${m}</b></td><td class="p">$${lo} – $${hi}</td><td><div class="bar"><i style="left:${lo/max*100}%;width:${Math.max((hi-lo)/max*100,1.5)}%"></i></div></td></tr>`}).join('')}</tbody>
+    </table></div>
+    <div style="margin-top:12px">${disc()}</div>
+  </div></section>
+  <section class="block" id="makers" style="padding-top:0"><div class="wrap">
+    <div class="maker">
+      <div><div class="eyebrow" style="color:var(--tape)">The tailor me Club · for tailors &amp; seamstresses</div><h2 style="margin-top:10px">Be someone’s tailor. $10 a month.</h2><p>No lead fees and no commission. Quote as many jobs as you like and keep every dollar you charge. Customers who make you their tailor rebook you directly through tailor me. Customers pay tailor me a flat $5 when they book you, so there’s nothing taken from your price.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:22px"><button class="btn btn-primary" id="joinBtn">Join the Club · $10/month</button></div></div>
+      <div class="stats"><div class="stat"><b class="num">$10</b>a month to join the Club</div><div class="stat"><b class="num">0%</b>commission on your work</div><div class="stat"><b class="num">∞</b>quotes, no lead fees</div><div class="stat"><b class="num">$5</b>paid by the customer, not you</div></div></div>
+    </div>
+  </div></section>
+  </div>`;
+}
+
+/* ---------- RESULTS ---------- */
+function filtered(){
+  const q=S.query.toLowerCase().trim();const f=S.f;
+  let r=T.filter(t=>{
+    if(f.cats.size&&!t.cats.some(c=>f.cats.has(c)))return false;
+    if(f.mobile&&!t.mobile)return false;
+    if(f.express&&!t.express)return false;
+    if(t.km>f.maxKm)return false;
+    if(t.rating<f.minRating)return false;
+    if(q){const hay=(t.name+' '+t.bio+' '+t.svc.map(s=>s[0]).join(' ')+' '+t.cats.map(catName).join(' ')).toLowerCase();
+      const words=q.split(/\s+/).filter(w=>w.length>2);if(words.length&&!words.some(w=>hay.includes(w.replace(/s$/,''))))return false}
+    return true});
+  const sorts={match:(a,b)=>b.rating*Math.log(b.reviews)-a.rating*Math.log(a.reviews),near:(a,b)=>a.km-b.km,rating:(a,b)=>b.rating-a.rating,price:(a,b)=>a.from-b.from};
+  return r.sort(sorts[S.sort]);
+}
+function results(){
+  const f=S.f;
+  return `<div class="view wrap results-layout">
+    <details class="filters" id="fBox" ${innerWidth>860?'open':''}><summary class="fsum">Filters</summary><div class="fbody">
+      <div><h4>Service</h4>${CATS.map(c=>`<label class="check"><input type="checkbox" data-fcat="${c.id}" ${f.cats.has(c.id)?'checked':''}>${esc(c.name)}</label>`).join('')}</div>
+      <div><h4>Options</h4>
+        <label class="check"><input type="checkbox" id="fMobile" ${f.mobile?'checked':''}>Comes to me for fittings</label>
+        <label class="check"><input type="checkbox" id="fExpress" ${f.express?'checked':''}>Same-day available</label></div>
+      <div><h4>Distance <span class="range-out" id="kmOut">${f.maxKm} km</span></h4><input type="range" id="fKm" min="2" max="25" value="${f.maxKm}"></div>
+      <div><h4>Rating</h4><select class="sel" id="fRating" style="width:100%"><option value="0">Any</option><option value="4.8" ${f.minRating==4.8?'selected':''}>4.8 and up</option><option value="4.9" ${f.minRating==4.9?'selected':''}>4.9 and up</option></select></div>
+      <button class="btn btn-ghost btn-sm" id="fClear">Clear filters</button>
+    </div></details>
+    <div style="min-width:0">
+      <div class="results-head"><div><div class="eyebrow">Near ${esc(S.suburb)}</div><h1 id="rCount" style="margin-top:4px"></h1></div>
+        <label style="display:flex;gap:8px;align-items:center;font-size:14px;color:var(--ink-2)">Sort <select class="sel" id="sort">
+          <option value="match">Best match</option><option value="near">Nearest</option><option value="rating">Highest rated</option><option value="price">Lowest price</option></select></label></div>
+      <div class="list" id="rList"></div>
+      <div class="est" style="margin-top:22px"><span>Not sure who to pick?</span><button class="btn btn-primary btn-sm" data-go="post" style="margin-left:auto">Post a job and get 3 quotes</button></div>
+    </div></div>`;
+}
+function fillResults(){
+  const r=filtered();
+  $('#rCount').textContent=`${r.length} tailor${r.length===1?'':'s'}${S.query?` for “${S.query}”`:''}`;
+  $('#sort').value=S.sort;
+  $('#rList').innerHTML=r.length?r.map(t=>`<button class="lrow" data-tailor="${t.id}">
+    <div class="cover" style="background:${fab(...t.pat)}"></div>
+    <div class="info"><div style="display:flex;gap:6px;flex-wrap:wrap">${t.flags.map((f,i)=>`<span class="pill ${i===0?'good':''}">${i===0?'✓ ':''}${esc(f)}</span>`).join('')}</div>
+      <h3>${esc(t.name)}</h3>
+      <div style="font-size:14px;color:var(--ink-2)">${stars(t.rating)} <span class="num">(${t.reviews})</span> · ${esc(t.suburb)} <span class="num">${t.km} km</span> · replies ${t.resp}</div>
+      <p class="bio">${esc(t.bio)}</p></div>
+    <div class="side"><div class="from">From<b>$${t.from}</b></div><span class="btn btn-ink btn-sm">View</span></div></button>`).join('')
+    :`<div class="empty">No tailors match those filters. Widen the distance or clear a filter.</div>`;
+}
+
+/* ---------- PROFILE ---------- */
+function profile(){
+  const t=T.find(x=>x.id===S.tailor);
+  const revs=REV.map((r,i)=>REV[(i+T.indexOf(t))%REV.length]).slice(0,3);
+  const pats=Object.keys(FAB);
+  return `<div class="view wrap">
+    <button class="crumb" data-go="results">← All tailors</button>
+    <div class="prof-hero" style="background:${fab(...t.pat)}"></div>
+    <div class="prof-grid">
+      <div class="prof-main">
+        <div class="prof-title"><div style="display:flex;gap:6px;flex-wrap:wrap">${t.flags.map((f,i)=>`<span class="pill ${i===0?'good':''}">${i===0?'✓ ':''}${esc(f)}</span>`).join('')}</div>
+          <h1 style="margin-top:12px">${esc(t.name)}</h1>
+          <div class="row">${stars(t.rating)} <span class="num">${t.reviews} reviews</span> · <span>${esc(t.suburb)}, <span class="num">${t.km} km</span></span> · <span class="num">${t.years} yrs experience</span></div>
+          <p style="margin-top:16px;max-width:62ch;font-size:17px">${esc(t.bio)}</p></div>
+        <div><h2>Services &amp; prices</h2><div class="svc">${t.svc.map(([n,d,p])=>`<div class="it"><div>${esc(n)}${d?`<small>${esc(d)}</small>`:''}</div><span class="dots"></span><span class="pr">${money(p)}</span></div>`).join('')}</div>
+          <div style="margin-top:12px">${disc()}</div></div>
+        <div><h2>Recent work</h2><div class="gallery">${[0,1,2,3].map(i=>{const p=pats[(T.indexOf(t)+i*3)%pats.length];const cols=[['#E9E5DA','#1E2230'],['#2D4A7A','#9BB1D6'],['#F4EFEA','#C9B9AA'],['#5B4636','#B39275']][i];return `<div style="background:${fab(p,...cols)}" role="img" aria-label="Sample work photo placeholder"></div>`}).join('')}</div></div>
+        <div><h2>Reviews</h2>
+          <div class="score"><div class="big num">${t.rating.toFixed(1)}</div><div class="bars">${[['Fit & finish',99],['On time',96],['Quote accuracy',98]].map(([l,v])=>`<div><span>${l}</span><div class="bar"><i style="left:0;width:${v}%"></i></div><span class="num">${(v/20).toFixed(1)}</span></div>`).join('')}</div></div>
+          ${revs.map(([n,j,s,txt])=>`<div class="review"><div class="h"><b>${n}</b><span>${'★'.repeat(+s)}${'☆'.repeat(5-s)}</span></div><div class="job">Booked through tailor me · ${esc(j)}</div><p>${esc(txt)}</p></div>`).join('')}
+        </div>
+      </div>
+      <aside class="book">
+        <div class="eyebrow">Request a quote</div>
+        <h3>Usually replies in ${t.resp}</h3>
+        <div class="facts"><div><small>From</small><b class="num">$${t.from}</b></div><div><small>Fittings</small><b>${t.mobile?'Studio or home':'At studio'}</b></div><div><small>Rush jobs</small><b>${t.express?'Same day':'Not offered'}</b></div><div><small>Speaks</small><b>${t.langs.join(', ')}</b></div></div>
+        <button class="btn btn-primary" data-quote="${t.id}">Get a quote from ${esc(t.name.split(' ')[0])}</button>
+        <button class="btn btn-ghost" id="saveT">Make them my tailor</button>
+        <div class="mytailor"><span>Your tailor keeps your measurements and past jobs, so rebooking takes one tap.</span></div>
+        ${disc()}<p style="font-size:13px;color:var(--ink-2)">tailor me charges a flat $5 booking fee when you accept a quote. ${INTRO}</p>
+      </aside>
+    </div></div>`;
+}
+
+/* ---------- POST A JOB wizard ---------- */
+const GARMENTS=[['Trousers / jeans','Hems, waist, zip'],['Dress / skirt','Shorten, take in'],['Shirt / top','Sleeves, taper'],['Jacket / coat','Sleeves, zip, buttons'],['Knitwear / activewear','Holes, seams'],['School / work uniform','Hems, patches'],['Curtains / homewares','Hems, covers'],['Bag / accessory','Straps, zips'],['Other','Tell us below']];
+const WORK=[['Shorten / hem',''],['Take in',''],['Let out',''],['Replace zip',''],['Repair a tear',''],['Buttons / small fix',''],['Patch or darn',''],['Not sure','Ask a tailor']];
+const WHEN=[['This week','Rush fees may apply'],['Within 2 weeks','Most common'],['For a date','Wedding, event'],['Flexible','Best prices']];
+const STEPS=['Garment','The work','Details','Timing','Your details','Review'];
+function wizard(){
+  const w=S.w;
+  if(w.step===6)return `<div class="view wrap wiz"><div class="done">
+    <div class="tick"><svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><path d="M10 21l7 7 14-15" fill="none" stroke="var(--tape)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <h1>Your tailor is on it</h1><p class="sub" style="max-width:46ch;margin:10px auto 0">We’ve sent it to ${S.tailor?esc(T.find(t=>t.id===S.tailor).name)+' and ':''}matching tailors near ${esc(w.where.split(',')[0])}. You’ll get up to three guide quotes, usually within the hour. Posting is free. The $5 booking fee is only charged when you accept one, and from there you deal with the tailor directly.</p>
+    <div class="ticket" style="max-width:520px;margin:28px auto 0;text-align:left"><div class="ticket-head" style="align-items:center">${w.photos[0]?`<img class="job-photo" src="${w.photos[0]}" alt="Job photo">`:''}<div style="flex:1;min-width:0"><div class="eyebrow">Job #TM-24817 · ${w.photos.length} photo${w.photos.length===1?'':'s'}</div><h3 style="margin-top:4px">${esc(w.work)} · ${esc(w.garment)}</h3></div><span class="pill"><span class="pulse"></span> Waiting</span></div>
+      <ul>${T.filter(t=>!S.tailor||t.id===S.tailor).slice(0,3).map(t=>`<li><div class="swatch" style="background:${fab(...t.pat)}"></div><div><div class="who">${esc(t.name)}</div><div class="meta">Viewing your job…</div></div><div class="price" style="color:var(--ink-2)">—</div></li>`).join('')}</ul><div style="padding:0 16px 16px">${disc()}</div></div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:28px;flex-wrap:wrap"><button class="btn btn-ink" data-go="home">Back to home</button><button class="btn btn-ghost" data-go="results">Browse tailors</button></div></div></div>`;
+  const pct=Math.round(w.step/STEPS.length*100);
+  let body='';
+  if(w.step===0)body=`<h1>What are we working on?</h1><p class="sub">Pick the closest match.</p><div class="opts">${GARMENTS.map(([g,d])=>`<button class="opt" data-pick="garment" data-v="${esc(g)}" aria-pressed="${w.garment===g}"><b>${g}</b><small>${d}</small></button>`).join('')}</div>`;
+  if(w.step===1)body=`<h1>What needs doing?</h1><p class="sub">${esc(w.garment)}</p><div class="opts">${WORK.map(([g,d])=>`<button class="opt" data-pick="work" data-v="${esc(g)}" aria-pressed="${w.work===g}"><b>${g}</b>${d?`<small>${d}</small>`:''}</button>`).join('')}</div>`;
+  if(w.step===2)body=`<h1>Show the tailor the job</h1><p class="sub">Every job needs at least one photo. Tailors can’t quote without seeing the garment.</p>
+    <div class="field"><label>Photos <span class="req">Required</span></label><label class="drop" id="drop" for="wPhotos">Drop photos here or <u>browse</u><br><small>Show the whole garment, plus a close-up of the area that needs work. Up to 6.</small><input type="file" id="wPhotos" accept="image/*" multiple hidden></label><div class="thumbs" id="thumbs">${thumbs()}</div></div>
+    <div class="field"><label for="wDetails">Describe the job <span class="req">Required</span></label><textarea class="inp" id="wDetails" placeholder="e.g. Bridesmaid dress, chiffon over lining. Needs to come up about 6 cm for flat shoes.">${esc(w.details)}</textarea><span class="hint">Mention the fabric and the measurement if you know it.</span></div>
+    <div style="margin-top:18px">${disc()}</div>
+    <div class="field"><label>Fitting</label><div class="opts" style="margin-top:0">${[['At the studio','I’ll drop it off'],['Come to me','Home fitting'],['No fitting needed','Measurement is enough']].map(([g,d])=>`<button class="opt" data-pick="fitting" data-v="${g}" aria-pressed="${w.fitting===g}" style="min-height:0"><b>${g}</b><small>${d}</small></button>`).join('')}</div></div>`;
+  if(w.step===3)body=`<h1>When do you need it?</h1><div class="opts" style="grid-template-columns:repeat(2,1fr)">${WHEN.map(([g,d])=>`<button class="opt" data-pick="when" data-v="${g}" aria-pressed="${w.when===g}"><b>${g}</b><small>${d}</small></button>`).join('')}</div>
+    <div class="field"><label for="wWhere">Where are you?</label><input class="inp" id="wWhere" value="${esc(w.where)}"></div>`;
+  if(w.step===4)body=`<h1>Where should quotes go?</h1><p class="sub">Tailors see your first name and suburb only.</p>
+    <div class="two"><div class="field"><label for="wName">First name</label><input class="inp" id="wName" value="${esc(w.name)}" autocomplete="given-name"></div>
+    <div class="field"><label for="wEmail">Email</label><input class="inp" id="wEmail" type="email" value="${esc(w.email)}" autocomplete="email"></div></div>
+    <div class="est"><span class="pulse"></span><span><b>5 tailors</b> near ${esc(w.where.split(',')[0])} do this kind of work.</span></div>`;
+  if(w.step===5){const est=estimate();body=`<h1>Check and post</h1><div class="summary">${[['Garment',w.garment],['Work',w.work],['Fitting',w.fitting||'Tailor to advise'],['Timing',w.when],['Location',w.where],['Photos',w.photos.length+' attached'],['Contact',w.name+' · '+w.email]].map(([k,v])=>`<div><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div>
+    <div class="thumbs" style="margin-top:14px">${w.photos.map(p=>`<img src="${p}" alt="Job photo">`).join('')}</div>
+    <div class="est">Guide price for this job in Sydney: <b style="margin-left:auto">${est}</b></div>
+    <div class="est" style="margin-top:8px">tailor me booking fee, charged only when you accept a quote: <b style="margin-left:auto">$5.00</b></div>
+    <div style="margin-top:12px">${disc()}</div>
+    <p class="intro-note">${INTRO}</p>
+    <label class="ack" for="wAck"><input type="checkbox" id="wAck" ${w.ack?'checked':''}><span>I understand quotes are a guide only and the final price is confirmed after the tailor inspects my garment. I understand the work and payment are arranged directly with the tailor, not with tailor me.</span></label>`}
+  return `<div class="view wrap wiz">
+    <div class="wiz-progress"><div class="lbl"><span>${STEPS[w.step]}</span><span class="num">${w.step+1} / ${STEPS.length}</span></div><div class="wtape"><div class="fill" style="width:${Math.max(pct,4)}%"></div></div></div>
+    ${body}<div class="err" id="wErr" role="alert"></div>
+    <div class="wiz-nav"><button class="btn btn-ghost" id="wBack">${w.step===0?'Cancel':'Back'}</button><button class="btn ${w.step===5?'btn-primary btn-brand':'btn-ink'}" id="wNext">${w.step===5?'tailor <i>me</i>':'Continue'}</button></div></div>`;
+}
+function estimate(){
+  const w=S.w;const base={'Shorten / hem':[14,40],'Take in':[25,70],'Let out':[25,60],'Replace zip':[18,45],'Repair a tear':[12,40],'Buttons / small fix':[8,20],'Patch or darn':[12,35],'Not sure':[15,60]}[w.work]||[15,60];
+  let m=w.garment==='Jacket / coat'?1.4:w.garment==='Curtains / homewares'?1.5:1;if(w.when==='This week')m*=1.25;
+  const r=v=>Math.round(v*m/5)*5;return `$${r(base[0])} – $${r(base[1])}`;
+}
+function wizStep(dir){
+  const w=S.w,err=$('#wErr');
+  const grab=()=>{if($('#wDetails'))w.details=$('#wDetails').value;if($('#wWhere'))w.where=$('#wWhere').value;if($('#wName'))w.name=$('#wName').value.trim();if($('#wEmail'))w.email=$('#wEmail').value.trim();if($('#wAck'))w.ack=$('#wAck').checked};
+  grab();
+  if(dir<0){if(w.step===0)return go(S.tailor?'profile':'home');w.step--;return render()}
+  const need={0:[w.garment,'Pick a garment to continue.'],1:[w.work,'Pick the work you need.'],2:[w.photos.length&&w.details.trim().length>=10,!w.photos.length?'Add at least one photo of the garment. Tailors can’t quote without one.':'Describe the job in a sentence or two (fabric and measurement help).'],5:[w.ack,'Tick the box to confirm you understand how quotes and bookings work.'],3:[w.when&&w.where.trim(),'Choose a timeframe and enter your suburb.'],4:[w.name&&/^\S+@\S+\.\S+$/.test(w.email),'Enter your first name and a valid email.']}[w.step];
+  if(need&&!need[0]){err.textContent=need[1];return}
+  w.step++;render();window.scrollTo({top:0});
+}
+
+/* ---------- render + events ---------- */
+function render(){
+  app.innerHTML=S.view==='home'?home():S.view==='results'?results():S.view==='profile'?profile():wizard();
+  if(S.view==='results')fillResults();
+  requestAnimationFrame(drawTapes);
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button,[data-go]');if(!b)return;
+  if(b.id==='logo')return go('home');
+  if(b.dataset.go){if(b.dataset.go==='post'){S.w.step=0;if(!b.closest('.book'))S.tailor=b.closest('.wiz')?S.tailor:null}return go(b.dataset.go)}
+  if(b.dataset.scroll){const doScroll=()=>document.getElementById(b.dataset.scroll)?.scrollIntoView({behavior:'smooth'});if(S.view!=='home'){go('home');setTimeout(doScroll,50)}else doScroll();return}
+  if(b.dataset.tailor)return go('profile',{tailor:b.dataset.tailor});
+  if(b.dataset.quote){S.tailor=b.dataset.quote;S.w.step=0;return go('post')}
+  if(b.dataset.job){S.query=b.dataset.job;S.f.cats=new Set([b.dataset.cat]);return go('results')}
+  if(b.dataset.catgo){S.query='';S.f.cats=new Set([b.dataset.catgo]);return go('results')}
+  if(b.dataset.pick){const w=S.w;if($('#wDetails'))w.details=$('#wDetails').value;if($('#wWhere'))w.where=$('#wWhere').value;w[b.dataset.pick]=b.dataset.v;
+    if(['garment','work'].includes(b.dataset.pick)){render();setTimeout(()=>wizStep(1),160)}else render();return}
+  if(b.dataset.rmphoto){S.w.photos.splice(+b.dataset.rmphoto,1);$('#thumbs').innerHTML=thumbs();return}
+  if(b.id==='wNext')return wizStep(1);
+  if(b.id==='wBack')return wizStep(-1);
+  if(b.id==='fClear'){S.f={cats:new Set(),mobile:false,express:false,maxKm:25,minRating:0};S.query='';return render()}
+  if(b.id==='saveT'){b.textContent='★ Your tailor';return toast('Added as your tailor. They’ll see your fit notes next time.')}
+  if(b.id==='joinBtn')return toast('Club sign-up comes in the next prototype');
+});
+document.addEventListener('submit',e=>{if(e.target.id==='heroSearch'){e.preventDefault();S.query=$('#q').value.trim();S.suburb=$('#sub').value.trim()||'Paddington';S.f.cats=new Set();go('results')}});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset.fcat){t.checked?S.f.cats.add(t.dataset.fcat):S.f.cats.delete(t.dataset.fcat);fillResults()}
+  if(t.id==='fMobile'){S.f.mobile=t.checked;fillResults()}
+  if(t.id==='fExpress'){S.f.express=t.checked;fillResults()}
+  if(t.id==='fRating'){S.f.minRating=+t.value;fillResults()}
+  if(t.id==='sort'){S.sort=t.value;fillResults()}
+  if(t.id==='wPhotos')readPhotos(t.files);
+});
+document.addEventListener('input',e=>{if(e.target.id==='fKm'){S.f.maxKm=+e.target.value;$('#kmOut').textContent=S.f.maxKm+' km';fillResults()}});
+function thumbs(){return S.w.photos.map((p,i)=>`<div class="th"><img src="${p}" alt="Garment photo ${i+1}"><button type="button" data-rmphoto="${i}" aria-label="Remove photo ${i+1}">×</button></div>`).join('')}
+function readPhotos(files){[...files].filter(f=>f.type.startsWith('image/')).slice(0,6-S.w.photos.length).forEach(f=>{const r=new FileReader();r.onload=()=>{S.w.photos.push(r.result);const th=$('#thumbs');if(th)th.innerHTML=thumbs();const e=$('#wErr');if(e)e.textContent=''};r.readAsDataURL(f)})}
+document.addEventListener('dragover',e=>{const d=e.target.closest('#drop');if(d){e.preventDefault();d.classList.add('over')}});
+document.addEventListener('dragleave',e=>{const d=e.target.closest('#drop');if(d)d.classList.remove('over')});
+document.addEventListener('drop',e=>{const d=e.target.closest('#drop');if(d){e.preventDefault();d.classList.remove('over');readPhotos(e.dataTransfer.files)}});
+addEventListener('resize',()=>{clearTimeout(drawTapes.t);drawTapes.t=setTimeout(drawTapes,120)});
+document.fonts?.ready.then(drawTapes);
+render();
+</script>
+
+</body>
+</html>

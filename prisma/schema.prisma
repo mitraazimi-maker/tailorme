@@ -1,0 +1,239 @@
+// tailor me data model. See CLAUDE.md for the product rules this encodes.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  TAILOR
+  ADMIN
+}
+
+enum AbnStatus {
+  UNCHECKED
+  CHECKED
+  FAILED
+}
+
+enum ClubStatus {
+  NONE
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum JobStatus {
+  OPEN
+  BOOKED
+  CANCELLED
+}
+
+enum QuoteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  WITHDRAWN
+}
+
+enum BookingStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  phone        String?
+  suburb       String?
+  role         Role     @default(CUSTOMER)
+  // "Remembers your fit": the customer's own measurements and fit notes,
+  // shown to tailors they have booked.
+  fitNotes     String?
+  isSample     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  sessions   Session[]
+  tailor     TailorProfile?
+  jobs       Job[]
+  bookings   Booking[]       @relation("CustomerBookings")
+  reviews    Review[]
+  myTailors  MyTailor[]
+}
+
+model Session {
+  id        String   @id // sha256 of the cookie token
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model TailorProfile {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  slug            String    @unique
+  businessName    String
+  suburb          String
+  bio             String    @default("")
+  yearsExperience Int?
+  languages       String[]
+  categories      String[]
+  comesToCustomer Boolean   @default(false)
+  sameDay         Boolean   @default(false)
+  openingHours    String?
+  shopAddress     String?
+
+  abn           String?
+  abnStatus     AbnStatus @default(UNCHECKED)
+  abnCheckedAt  DateTime?
+  abnEntityName String?
+
+  clubStatus           ClubStatus @default(NONE)
+  stripeCustomerId     String?    @unique
+  stripeSubscriptionId String?    @unique
+  clubRenewsAt         DateTime?
+
+  isSample  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  services Service[]
+  quotes   Quote[]
+  bookings Booking[]
+  reviews  Review[]
+  fans     MyTailor[]
+  requests Job[]      @relation("RequestedTailor")
+}
+
+model Service {
+  id         String        @id @default(cuid())
+  tailorId   String
+  name       String
+  note       String?
+  priceCents Int?
+  priceText  String? // e.g. "+30%" when it isn't a fixed price
+  sortOrder  Int           @default(0)
+  tailor     TailorProfile @relation(fields: [tailorId], references: [id], onDelete: Cascade)
+
+  @@index([tailorId])
+}
+
+model Job {
+  id                String     @id @default(cuid())
+  ref               String     @unique
+  customerId        String
+  garment           String
+  work              String
+  category          String
+  description       String
+  fitting           String?
+  timing            String
+  suburb            String
+  status            JobStatus  @default(OPEN)
+  requestedTailorId String?
+  acknowledgedAt    DateTime
+  isSample          Boolean    @default(false)
+  createdAt         DateTime   @default(now())
+
+  customer        User           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  requestedTailor TailorProfile? @relation("RequestedTailor", fields: [requestedTailorId], references: [id], onDelete: SetNull)
+  photos          JobPhoto[]
+  quotes          Quote[]
+  booking         Booking?
+
+  @@index([status, category])
+  @@index([customerId])
+}
+
+model JobPhoto {
+  id        String   @id @default(cuid())
+  jobId     String
+  storageKey String  @unique
+  mime      String
+  bytes     Int
+  createdAt DateTime @default(now())
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+}
+
+model Quote {
+  id         String      @id @default(cuid())
+  jobId      String
+  tailorId   String
+  priceCents Int
+  readyBy    DateTime
+  message    String      @default("")
+  status     QuoteStatus @default(PENDING)
+  createdAt  DateTime    @default(now())
+
+  job     Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  tailor  TailorProfile @relation(fields: [tailorId], references: [id], onDelete: Cascade)
+  booking Booking?
+
+  @@unique([jobId, tailorId])
+}
+
+model Booking {
+  id                      String        @id @default(cuid())
+  jobId                   String        @unique
+  quoteId                 String        @unique
+  customerId              String
+  tailorId                String
+  feeCents                Int
+  status                  BookingStatus @default(PENDING_PAYMENT)
+  stripeCheckoutSessionId String?       @unique
+  paidAt                  DateTime?
+  completedAt             DateTime?
+  createdAt               DateTime      @default(now())
+
+  job      Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  quote    Quote         @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  customer User          @relation("CustomerBookings", fields: [customerId], references: [id], onDelete: Cascade)
+  tailor   TailorProfile @relation(fields: [tailorId], references: [id], onDelete: Cascade)
+  review   Review?
+}
+
+// Reviews can only exist against a paid booking (rule 6). There is deliberately
+// no update path anywhere in the app: nobody, including admins, edits a review.
+model Review {
+  id            String   @id @default(cuid())
+  bookingId     String   @unique
+  tailorId      String
+  customerId    String
+  rating        Int
+  fitFinish     Int
+  onTime        Int
+  quoteAccuracy Int
+  body          String
+  createdAt     DateTime @default(now())
+
+  booking  Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  tailor   TailorProfile @relation(fields: [tailorId], references: [id], onDelete: Cascade)
+  customer User          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([tailorId])
+}
+
+model MyTailor {
+  customerId String
+  tailorId   String
+  createdAt  DateTime      @default(now())
+  customer   User          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tailor     TailorProfile @relation(fields: [tailorId], references: [id], onDelete: Cascade)
+
+  @@id([customerId, tailorId])
+}
