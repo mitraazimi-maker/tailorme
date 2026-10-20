@@ -28,6 +28,11 @@ enum ClubStatus {
   CANCELED
 }
 
+enum ClubTier {
+  CLUB
+  PLUS
+}
+
 enum JobStatus {
   OPEN
   BOOKED
@@ -101,6 +106,8 @@ model TailorProfile {
   abnEntityName String?
 
   clubStatus           ClubStatus @default(NONE)
+  // PLUS: featured in search, 15-minute head start on new jobs, portfolio gallery.
+  clubTier             ClubTier   @default(CLUB)
   stripeCustomerId     String?    @unique
   stripeSubscriptionId String?    @unique
   clubRenewsAt         DateTime?
@@ -116,6 +123,21 @@ model TailorProfile {
   reviews  Review[]
   fans     MyTailor[]
   requests Job[]      @relation("RequestedTailor")
+  portfolio PortfolioPhoto[]
+}
+
+// Club Plus portfolio. Public on the tailor's profile while they're on Plus.
+model PortfolioPhoto {
+  id         String        @id @default(cuid())
+  tailorId   String
+  storageKey String        @unique
+  mime       String
+  bytes      Int
+  caption    String?
+  createdAt  DateTime      @default(now())
+  tailor     TailorProfile @relation(fields: [tailorId], references: [id], onDelete: Cascade)
+
+  @@index([tailorId])
 }
 
 model Service {
@@ -145,6 +167,8 @@ model Job {
   status            JobStatus  @default(OPEN)
   requestedTailorId String?
   acknowledgedAt    DateTime
+  // Standard Club members are alerted after the Plus head start (see /api/cron/notify).
+  clubNotifiedAt    DateTime?
   isSample          Boolean    @default(false)
   createdAt         DateTime   @default(now())
 

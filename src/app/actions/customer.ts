@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
-import { BOOKING_FEE_CENTS } from "@/lib/catalog";
+import { bookingFeeCents } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { bookingCheckoutUrl } from "@/lib/payments";
 import { canAcceptQuote, canReview } from "@/lib/rules";
@@ -19,7 +19,7 @@ export async function toggleMyTailor(form: FormData) {
   revalidatePath(`/tailors/${slug}`);
 }
 
-/** Accepting a quote creates a booking and sends the customer to pay the $5 fee. */
+/** Accepting a quote creates a booking and sends the customer to pay the booking fee (15% of the quote, min $5). */
 export async function acceptQuote(form: FormData) {
   const quoteId = String(form.get("quoteId"));
   const quote = await db.quote.findUnique({ where: { id: quoteId }, include: { job: true, tailor: true } });
@@ -31,7 +31,7 @@ export async function acceptQuote(form: FormData) {
   // A job has at most one booking. An unpaid one from an abandoned checkout is reused.
   const existing = await db.booking.findUnique({ where: { jobId: quote.jobId } });
   if (existing && existing.status !== "PENDING_PAYMENT") redirect(`/jobs/${quote.jobId}`);
-  const data = { quoteId: quote.id, tailorId: quote.tailorId, customerId: user.id, feeCents: BOOKING_FEE_CENTS };
+  const data = { quoteId: quote.id, tailorId: quote.tailorId, customerId: user.id, feeCents: bookingFeeCents(quote.priceCents) };
   const booking = existing
     ? await db.booking.update({ where: { id: existing.id }, data: { ...data, stripeCheckoutSessionId: null } })
     : await db.booking.create({ data: { ...data, jobId: quote.jobId } });
@@ -42,6 +42,7 @@ export async function acceptQuote(form: FormData) {
     email: user.email,
     jobRef: quote.job.ref,
     tailorName: quote.tailor.businessName,
+    feeCents: booking.feeCents,
   });
   if (sessionId) await db.booking.update({ where: { id: booking.id }, data: { stripeCheckoutSessionId: sessionId } });
   redirect(url);

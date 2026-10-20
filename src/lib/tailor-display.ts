@@ -13,6 +13,8 @@ export type TailorCard = {
   replyMins: number | null;
   categories: string[];
   abnChecked: boolean;
+  /** Club Plus: shown first in "Best match" and always labelled "Featured". */
+  featured: boolean;
   comesToCustomer: boolean;
   sameDay: boolean;
   bio: string;

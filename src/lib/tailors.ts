@@ -5,6 +5,7 @@ import { patternFor, type TailorCard } from "./tailor-display";
 
 export { patternFor, replyLabel, type TailorCard } from "./tailor-display";
 import { db } from "./db";
+import { isPlus } from "./rules";
 import { distanceKm } from "./suburbs";
 
 /** Only Club members are listed publicly. */
@@ -44,6 +45,7 @@ async function decorate(rows: Prisma.TailorProfileGetPayload<{ include: { servic
       replyMins: mins.length >= 3 ? mins.sort((a, b) => a - b)[Math.floor(mins.length / 2)] : null,
       categories: t.categories,
       abnChecked: t.abnStatus === "CHECKED",
+      featured: isPlus(t),
       comesToCustomer: t.comesToCustomer,
       sameDay: t.sameDay,
       bio: t.bio,
@@ -86,7 +88,8 @@ export async function searchTailors(s: Search): Promise<TailorCard[]> {
 
   const score = (c: TailorCard) => (c.rating ?? 4) * Math.log(c.reviews + 2) - (c.km ?? 10) * 0.05;
   const sorts = {
-    match: (a: TailorCard, b: TailorCard) => score(b) - score(a),
+    // Featured (Club Plus) first in the default order only; an explicit sort is respected.
+    match: (a: TailorCard, b: TailorCard) => Number(b.featured) - Number(a.featured) || score(b) - score(a),
     near: (a: TailorCard, b: TailorCard) => (a.km ?? 999) - (b.km ?? 999),
     rating: (a: TailorCard, b: TailorCard) => (b.rating ?? 0) - (a.rating ?? 0),
     price: (a: TailorCard, b: TailorCard) => (a.fromCents ?? 1e9) - (b.fromCents ?? 1e9),
@@ -99,6 +102,7 @@ export async function getTailorBySlug(slug: string, near: string | null) {
     where: { slug },
     include: {
       services: { orderBy: { sortOrder: "asc" } },
+      portfolio: { orderBy: { createdAt: "desc" } },
       reviews: { orderBy: { createdAt: "desc" }, take: 20, include: { customer: { select: { firstName: true } }, booking: { select: { job: { select: { work: true, garment: true } } } } } },
     },
   });

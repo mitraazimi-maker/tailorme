@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { canAcceptQuote, canQuote, canReview, canTailorSeeJob, contactShared } from "./rules";
+import { canAcceptQuote, canQuote, canReview, canTailorSeeJob, contactShared, isPlus } from "./rules";
 
-const tailor = { id: "t1", userId: "u-t1", clubStatus: "ACTIVE" as const };
+const tailor = { id: "t1", userId: "u-t1", clubStatus: "ACTIVE" as const, clubTier: "CLUB" as const };
+const plus = { ...tailor, id: "t-plus", clubTier: "PLUS" as const };
 const lapsed = { ...tailor, clubStatus: "CANCELED" as const };
-const job = { id: "j1", customerId: "u-c1", status: "OPEN" as const };
+// Posted an hour ago, so the Plus head start has passed.
+const job = { id: "j1", customerId: "u-c1", status: "OPEN" as const, createdAt: new Date(Date.now() - 3600_000) };
 
 describe("canQuote", () => {
   it("allows a Club member on an open job", () => expect(canQuote(tailor, job, 0, false).ok).toBe(true));
@@ -44,4 +46,28 @@ it("contact details are shared only after payment", () => {
   expect(contactShared({ status: "PENDING_PAYMENT" })).toBe(false);
   expect(contactShared({ status: "CONFIRMED" })).toBe(true);
   expect(contactShared(null)).toBe(false);
+});
+
+describe("Club Plus head start", () => {
+  const fresh = { ...job, createdAt: new Date() };
+  const later = new Date(Date.now() + 16 * 60_000);
+  it("Plus members can see and quote a brand-new job", () => {
+    expect(canTailorSeeJob(plus, fresh, null).ok).toBe(true);
+    expect(canQuote(plus, fresh, 0, false).ok).toBe(true);
+  });
+  it("standard members wait 15 minutes", () => {
+    const v = canTailorSeeJob(tailor, fresh, null);
+    expect(v.ok).toBe(false);
+    expect(!v.ok && v.reason).toMatch(/15 min/);
+    expect(canQuote(tailor, fresh, 0, false).ok).toBe(false);
+    expect(canTailorSeeJob(tailor, fresh, null, later).ok).toBe(true);
+    expect(canQuote(tailor, fresh, 0, false, later).ok).toBe(true);
+  });
+  it("a tailor the customer asked for skips the wait", () =>
+    expect(canTailorSeeJob(tailor, { ...fresh, requestedTailorId: "t1" }, null).ok).toBe(true));
+  it("Plus perks need an active membership", () => {
+    expect(isPlus(plus)).toBe(true);
+    expect(isPlus({ ...plus, clubStatus: "PAST_DUE" })).toBe(false);
+    expect(isPlus(tailor)).toBe(false);
+  });
 });

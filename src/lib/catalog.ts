@@ -9,8 +9,17 @@ export const INTRO =
 export const ACKNOWLEDGEMENT =
   "I understand quotes are a guide only and the final price is confirmed after the tailor inspects my garment. I understand the work and payment are arranged directly with the tailor, not with tailor me.";
 
-export const BOOKING_FEE_CENTS = 500;
+// Customer booking fee: 15% of the accepted guide quote, never less than $5.
+export const BOOKING_FEE_RATE = 0.15;
+export const BOOKING_FEE_MIN_CENTS = 500;
+export const BOOKING_FEE_LABEL = "15% of the quote you accept (minimum $5)";
+export const bookingFeeCents = (quoteCents: number) => Math.max(BOOKING_FEE_MIN_CENTS, Math.round(quoteCents * BOOKING_FEE_RATE));
+
 export const CLUB_PRICE_LABEL = "$10/month";
+export const PLUS_PRICE_LABEL = "$29/month";
+/** Club Plus members see new jobs this long before standard Club members. */
+export const HEAD_START_MINUTES = 15;
+export const MAX_PORTFOLIO_PHOTOS = 12;
 export const MAX_QUOTES_PER_JOB = 3;
 export const MAX_PHOTOS = 6;
 

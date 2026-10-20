@@ -10,7 +10,7 @@ export default function ForTailors() {
       <div className="steps" style={{ marginTop: 48 }}>
         <div className="step"><span className="n">Step 1</span><h3>Set up your profile</h3><p>Your services, your prices, your suburb. Add your ABN and we check it on ABN Lookup.</p></div>
         <div className="step"><span className="n">Step 2</span><h3>Quote on local jobs</h3><p>Every job comes with photos. Reply with a guide price and a ready date. Confirm the final price once you see the garment.</p></div>
-        <div className="step"><span className="n">Step 3</span><h3>Get booked</h3><p>The customer pays tailor me $5 to book you and gets your details. They pay you directly for the work. No commission.</p></div>
+        <div className="step"><span className="n">Step 3</span><h3>Get booked</h3><p>The customer pays tailor me a booking fee to book you and gets your details. They pay you directly for the work. No commission.</p></div>
       </div>
       <div className="standard" style={{ marginTop: 48 }}>
         <div><div className="eyebrow" style={{ color: "var(--tape)" }}>The tailor me standard</div><h2 style={{ marginTop: 12 }}>Four things Club members agree to.</h2><p>Kept short on purpose.</p></div>

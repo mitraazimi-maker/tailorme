@@ -32,9 +32,12 @@ export default async function DevCheckout({ searchParams }: { searchParams: Prom
           </>
         ) : club && user.tailor ? (
           <>
-            <h2>tailor me Club</h2>
-            <p className="num" style={{ fontSize: 32 }}>$10 / month</p>
-            <form action={simulateClubPayment}><button className="btn btn-primary" style={{ width: "100%" }}>Subscribe</button></form>
+            <h2>{club === "plus" ? "tailor me Club Plus" : "tailor me Club"}</h2>
+            <p className="num" style={{ fontSize: 32 }}>{club === "plus" ? "$29" : "$10"} / month</p>
+            <form action={simulateClubPayment}>
+              <input type="hidden" name="tier" value={club} />
+              <button className="btn btn-primary" style={{ width: "100%" }}>Subscribe</button>
+            </form>
             <Link className="btn btn-ghost" href="/tailor">Cancel</Link>
           </>
         ) : (

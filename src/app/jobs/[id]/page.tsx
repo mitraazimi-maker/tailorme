@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Disclaimer, IntroNote, Stars, Status } from "@/components/ui";
 import { acceptQuote, cancelJob, leaveReview } from "@/app/actions/customer";
 import { requireUser } from "@/lib/auth";
-import { estimate } from "@/lib/catalog";
+import { BOOKING_FEE_LABEL, bookingFeeCents, estimate } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { fabric, money } from "@/lib/fabric";
 import { canReview, contactShared } from "@/lib/rules";
@@ -122,7 +122,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
                           {job.status === "OPEN" && q.status === "PENDING" ? (
                             <form action={acceptQuote}>
                               <input type="hidden" name="quoteId" value={q.id} />
-                              <button className="btn btn-primary btn-sm">Book for $5 booking fee</button>
+                              <button className="btn btn-primary btn-sm">Book · {money(bookingFeeCents(q.priceCents))} booking fee</button>
                             </form>
                           ) : <Status s={q.status} />}
                         </div>
@@ -130,7 +130,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
                     );
                   })}
                   <div style={{ marginTop: 14 }}><Disclaimer /></div>
-                  <p className="small muted" style={{ marginTop: 10 }}>The $5 booking fee goes to tailor me. You pay the tailor directly for the work, once they’ve inspected the garment and confirmed the price.</p>
+                  <p className="small muted" style={{ marginTop: 10 }}>The booking fee is {BOOKING_FEE_LABEL} and goes to tailor me. You pay the tailor directly for the work, once they’ve inspected the garment and confirmed the price.</p>
                 </div>
               )}
             </div>

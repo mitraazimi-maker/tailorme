@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Disclaimer, Flags, IntroNote, Stars } from "@/components/ui";
 import { getUser } from "@/lib/auth";
-import { catName } from "@/lib/catalog";
+import { BOOKING_FEE_LABEL, catName } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { fabric, money } from "@/lib/fabric";
 import { getTailorBySlug, replyLabel } from "@/lib/tailors";
@@ -59,6 +59,18 @@ export default async function Profile({ params }: { params: Promise<{ slug: stri
             </div>
           )}
 
+          {card.featured && t.portfolio.length > 0 && (
+            <div>
+              <h2>Recent work</h2>
+              <div className="gallery">
+                {t.portfolio.map((p) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={p.id} src={`/api/portfolio/${p.id}`} alt={p.caption ?? `Work by ${t.businessName}`} title={p.caption ?? undefined} style={{ width: "100%", aspectRatio: "1", objectFit: "cover", borderRadius: 10, border: "1px solid var(--line)" }} />
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
             <h2>Reviews</h2>
             {card.rating == null ? (
@@ -107,7 +119,7 @@ export default async function Profile({ params }: { params: Promise<{ slug: stri
           )}
           <div className="mytailor"><span>Your tailor sees your fit notes and past jobs, so rebooking is quick.</span></div>
           <Disclaimer />
-          <p style={{ fontSize: 13, color: "var(--ink-2)" }}>tailor me charges a flat $5 booking fee when you accept a quote. </p>
+          <p style={{ fontSize: 13, color: "var(--ink-2)" }}>The tailor me booking fee is {BOOKING_FEE_LABEL}. You pay the tailor directly for the work.</p>
           <IntroNote className="small muted" />
         </aside>
       </div>

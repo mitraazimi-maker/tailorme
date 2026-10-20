@@ -4,9 +4,9 @@ import { z } from "zod";
 import { getUser, hashPassword, roleForNewUser, startSession } from "@/lib/auth";
 import { FITTING, GARMENTS, MAX_PHOTOS, TIMING, WORK, categoryFor } from "@/lib/catalog";
 import { db } from "@/lib/db";
-import { notify } from "@/lib/notify";
+import { alertHeadStart } from "@/lib/alerts";
 import { MAX_PHOTO_BYTES, savePhoto, sniffImage } from "@/lib/storage";
-import { distanceKm, findSuburb } from "@/lib/suburbs";
+import { findSuburb } from "@/lib/suburbs";
 
 const oneOf = (opts: [string, string][]) => z.string().refine((v) => opts.some(([o]) => o === v), "Pick one of the options.");
 
@@ -28,9 +28,6 @@ const NewCustomer = z.object({
 });
 
 const bad = (error: string, status = 400) => NextResponse.json({ error }, { status });
-
-/** Radius within which tailors are told about a new job. */
-const NOTIFY_KM = 15;
 
 export async function POST(req: Request) {
   const form = await req.formData();
@@ -106,15 +103,7 @@ export async function POST(req: Request) {
     }
   }
 
-  const tailors = await db.tailorProfile.findMany({
-    where: { clubStatus: "ACTIVE", OR: [{ categories: { has: job.category } }, { id: requested?.id ?? "" }] },
-    include: { user: { select: { email: true } } },
-  });
-  for (const t of tailors) {
-    const km = distanceKm(t.suburb, suburb);
-    if (t.id === requested?.id || km == null || km <= NOTIFY_KM)
-      await notify(t.user.email, `New job near you: ${job.work} · ${job.garment}`, `${job.suburb}. See it and quote at /tailor/jobs/${job.id}`);
-  }
+  await alertHeadStart(job);
 
   return NextResponse.json({ id: job.id, ref: job.ref });
 }

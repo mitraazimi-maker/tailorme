@@ -1,18 +1,19 @@
 import Link from "next/link";
-import { joinClub, manageBilling } from "@/app/actions/tailor";
+import { changeTier, joinClub, manageBilling } from "@/app/actions/tailor";
 import { Status } from "@/components/ui";
 import { requireTailor } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { money } from "@/lib/fabric";
 import { paymentsMode } from "@/lib/payments";
-import { isClubMember } from "@/lib/rules";
+import { HEAD_START_MINUTES, MAX_PORTFOLIO_PHOTOS } from "@/lib/catalog";
+import { isClubMember, isPlus } from "@/lib/rules";
 import { TailorTabs } from "./TailorTabs";
 
 export const metadata = { title: "Tailor dashboard" };
 
-export default async function TailorHome({ searchParams }: { searchParams: Promise<{ club?: string }> }) {
+export default async function TailorHome({ searchParams }: { searchParams: Promise<{ club?: string; tier?: string }> }) {
   const { tailor } = await requireTailor();
-  const { club } = await searchParams;
+  const { club, tier } = await searchParams;
   const [services, quotes, bookings] = await Promise.all([
     db.service.count({ where: { tailorId: tailor.id } }),
     db.quote.findMany({ where: { tailorId: tailor.id, status: "PENDING" }, include: { job: true }, orderBy: { createdAt: "desc" }, take: 10 }),
@@ -30,12 +31,15 @@ export default async function TailorHome({ searchParams }: { searchParams: Promi
     !tailor.abn && "Add your ABN",
   ].filter(Boolean) as string[];
   const member = isClubMember(tailor);
+  const plus = isPlus(tailor);
 
   return (
     <div className="wrap page">
       <TailorTabs current="/tailor" />
       <div className="page-head"><h1>{tailor.businessName}</h1><Link className="btn btn-ghost btn-sm" href={`/tailors/${tailor.slug}`}>View public profile</Link></div>
       {club && <p className="notice ok" style={{ marginBottom: 16 }}>Welcome to the tailor me Club. It can take a moment for your membership to show as active.</p>}
+      {tier === "plus" && <p className="notice ok" style={{ marginBottom: 16 }}>You’re on Club Plus. You’re now featured in search and get first look at new jobs.</p>}
+      {tier === "club" && <p className="notice ok" style={{ marginBottom: 16 }}>You’re back on Club at $10/month.</p>}
 
       <div className="detail-grid">
         <div className="stack">
@@ -79,21 +83,41 @@ export default async function TailorHome({ searchParams }: { searchParams: Promi
         <aside className="panel stack">
           <div className="eyebrow" style={{ color: "var(--tape)" }}>The tailor me Club</div>
           <div className="row-wrap" style={{ justifyContent: "space-between" }}>
-            <h2 style={{ margin: 0 }}>{member ? "You’re a member" : "Not a member yet"}</h2>
+            <h2 style={{ margin: 0 }}>{plus ? "Club Plus" : member ? "Club" : "Not a member yet"}</h2>
             <Status s={tailor.clubStatus} label={tailor.clubStatus === "NONE" ? "inactive" : undefined} />
           </div>
-          {member ? (
+          {member && (
+            <p className="muted small">
+              {plus ? "$29/month" : "$10/month"}. No lead fees, no commission, unlimited quotes.
+              {tailor.clubRenewsAt && ` Renews ${tailor.clubRenewsAt.toLocaleDateString("en-AU", { day: "numeric", month: "short" })}.`}
+            </p>
+          )}
+          {!member && (
             <>
-              <p className="muted small">$10/month. No lead fees, no commission, unlimited quotes.{tailor.clubRenewsAt && ` Renews ${tailor.clubRenewsAt.toLocaleDateString("en-AU", { day: "numeric", month: "short" })}.`}</p>
-              {paymentsMode() === "stripe" && tailor.stripeCustomerId && <form action={manageBilling}><button className="btn btn-ghost btn-sm">Manage billing</button></form>}
-            </>
-          ) : (
-            <>
-              <p className="muted small">Join for $10/month to appear in search, see job photos and quote. No lead fees and no commission. Customers pay tailor me a flat $5 when they book you.</p>
+              <p className="muted small">Join to appear in search, see job photos and quote. No lead fees and no commission. Customers pay tailor me the booking fee, not you.</p>
               {tailor.clubStatus === "PAST_DUE" && <p className="notice bad">Your last payment didn’t go through. Update your card to stay listed.</p>}
-              <form action={joinClub}><button className="btn btn-primary" style={{ width: "100%" }}>Join the Club · $10/month</button></form>
+              <form action={joinClub}><input type="hidden" name="tier" value="CLUB" /><button className="btn btn-ghost" style={{ width: "100%" }}>Join the Club · $10/month</button></form>
             </>
           )}
+          {!plus && (
+            <div className="notice" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <b style={{ color: "var(--ink)" }}>Club Plus · $29/month</b>
+              <ul style={{ margin: 0, paddingLeft: 18 }}>
+                <li><b>Featured</b> at the top of search</li>
+                <li>See and quote new jobs <b>{HEAD_START_MINUTES} minutes</b> before everyone else</li>
+                <li>A portfolio of up to {MAX_PORTFOLIO_PHOTOS} photos on your profile</li>
+              </ul>
+              <form action={member ? changeTier : joinClub}>
+                <input type="hidden" name="tier" value="PLUS" />
+                <button className="btn btn-primary" style={{ width: "100%" }}>{member ? "Upgrade to Club Plus" : "Join Club Plus · $29/month"}</button>
+              </form>
+              {member && <span className="small">The difference is prorated for the rest of this month.</span>}
+            </div>
+          )}
+          {plus && (
+            <form action={changeTier}><input type="hidden" name="tier" value="CLUB" /><button className="btn btn-ghost btn-sm">Switch back to Club · $10/month</button></form>
+          )}
+          {member && paymentsMode() === "stripe" && tailor.stripeCustomerId && <form action={manageBilling}><button className="btn btn-ghost btn-sm">Manage billing</button></form>}
           <hr style={{ border: 0, borderTop: "1px solid var(--line)", width: "100%" }} />
           <b>The tailor me standard</b>
           <ul className="small muted" style={{ margin: 0, paddingLeft: 18 }}>

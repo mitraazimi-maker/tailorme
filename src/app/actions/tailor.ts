@@ -4,11 +4,12 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireTailor } from "@/lib/auth";
 import { isValidAbn, lookupAbn, normaliseAbn } from "@/lib/abn";
-import { isCategory } from "@/lib/catalog";
+import { MAX_PORTFOLIO_PHOTOS, isCategory } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { notify } from "@/lib/notify";
-import { billingPortalUrl, clubCheckoutUrl, paymentsMode } from "@/lib/payments";
-import { canQuote } from "@/lib/rules";
+import { billingPortalUrl, changeClubTier, clubCheckoutUrl, paymentsMode } from "@/lib/payments";
+import { canQuote, isPlus } from "@/lib/rules";
+import { MAX_PHOTO_BYTES, savePhoto, sniffImage } from "@/lib/storage";
 import { findSuburb } from "@/lib/suburbs";
 
 const back = (path: string, error: string): never => redirect(`${path}?error=${encodeURIComponent(error)}`);
@@ -147,10 +148,51 @@ export async function markCompleted(form: FormData) {
   revalidatePath(`/tailor/jobs/${String(form.get("jobId"))}`);
 }
 
-export async function joinClub() {
+const tierFrom = (form: FormData) => (form.get("tier") === "PLUS" ? "PLUS" : "CLUB") as "PLUS" | "CLUB";
+
+export async function joinClub(form: FormData) {
   const { user, tailor } = await requireTailor("/tailor");
   if (tailor.clubStatus === "ACTIVE") redirect("/tailor");
-  redirect(await clubCheckoutUrl({ tailorId: tailor.id, email: user.email, stripeCustomerId: tailor.stripeCustomerId }));
+  redirect(await clubCheckoutUrl({ tailorId: tailor.id, email: user.email, stripeCustomerId: tailor.stripeCustomerId, tier: tierFrom(form) }));
+}
+
+/** Upgrade to Club Plus or move back to Club, for a tailor who's already a member. */
+export async function changeTier(form: FormData) {
+  const { tailor } = await requireTailor("/tailor");
+  const tier = tierFrom(form);
+  if (tailor.clubStatus !== "ACTIVE" || tailor.clubTier === tier) redirect("/tailor");
+  if (paymentsMode() === "stripe") {
+    if (!tailor.stripeSubscriptionId) redirect("/tailor");
+    await changeClubTier(tailor.stripeSubscriptionId, tier);
+  }
+  // The webhook confirms this for Stripe; set it now so the dashboard updates straight away.
+  await db.tailorProfile.update({ where: { id: tailor.id }, data: { clubTier: tier } });
+  redirect(`/tailor?tier=${tier.toLowerCase()}`);
+}
+
+export async function addPortfolioPhotos(form: FormData) {
+  const { tailor } = await requireTailor("/tailor/profile");
+  if (!isPlus(tailor)) back("/tailor/profile", "The portfolio is part of Club Plus.");
+  const existing = await db.portfolioPhoto.count({ where: { tailorId: tailor.id } });
+  const files = form.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0);
+  if (!files.length) back("/tailor/profile", "Choose at least one photo.");
+  if (existing + files.length > MAX_PORTFOLIO_PHOTOS) back("/tailor/profile", `Up to ${MAX_PORTFOLIO_PHOTOS} portfolio photos.`);
+  const caption = String(form.get("caption") ?? "").trim().slice(0, 120) || null;
+  for (const f of files) {
+    if (f.size > MAX_PHOTO_BYTES) back("/tailor/profile", "Each photo must be under 10 MB.");
+    const buf = new Uint8Array(await f.arrayBuffer());
+    const mime = sniffImage(buf);
+    if (!mime) back("/tailor/profile", "Photos must be JPEG, PNG or WebP.");
+    const storageKey = await savePhoto(buf, mime!);
+    await db.portfolioPhoto.create({ data: { tailorId: tailor.id, storageKey, mime: mime!, bytes: buf.length, caption } });
+  }
+  redirect("/tailor/profile?saved=1#portfolio");
+}
+
+export async function removePortfolioPhoto(form: FormData) {
+  const { tailor } = await requireTailor("/tailor/profile");
+  await db.portfolioPhoto.deleteMany({ where: { id: String(form.get("id")), tailorId: tailor.id } });
+  revalidatePath("/tailor/profile");
 }
 
 export async function manageBilling() {

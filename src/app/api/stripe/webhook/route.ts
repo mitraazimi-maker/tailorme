@@ -1,7 +1,7 @@
 import type Stripe from "stripe";
 import { clubStatusFromStripe, confirmBooking } from "@/lib/bookings";
 import { db } from "@/lib/db";
-import { stripe } from "@/lib/payments";
+import { stripe, tierForPriceId } from "@/lib/payments";
 
 // Stripe webhook. Configure the endpoint for:
 //   checkout.session.completed, customer.subscription.created,
@@ -38,11 +38,13 @@ export async function POST(req: Request) {
 async function syncSubscription(sub: Stripe.Subscription, tailorId: string | undefined) {
   const customer = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
   const where = tailorId ? { id: tailorId } : { stripeCustomerId: customer };
-  const periodEnd = sub.items.data[0]?.current_period_end;
+  const item = sub.items.data[0];
+  const periodEnd = item?.current_period_end;
   await db.tailorProfile.updateMany({
     where,
     data: {
       clubStatus: clubStatusFromStripe(sub.status),
+      clubTier: tierForPriceId(item?.price.id),
       stripeCustomerId: customer,
       stripeSubscriptionId: sub.id,
       clubRenewsAt: periodEnd ? new Date(periodEnd * 1000) : null,

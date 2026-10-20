@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Disclaimer } from "@/components/ui";
-import { ACKNOWLEDGEMENT, FITTING, GARMENTS, INTRO, MAX_PHOTOS, TIMING, WORK, estimate } from "@/lib/catalog";
+import { ACKNOWLEDGEMENT, BOOKING_FEE_LABEL, FITTING, GARMENTS, INTRO, MAX_PHOTOS, TIMING, WORK, estimate } from "@/lib/catalog";
 import { SUBURB_NAMES, findSuburb } from "@/lib/suburbs";
 
 const STEPS = ["Garment", "The work", "Details", "Timing", "Your details", "Review"];
@@ -236,7 +236,7 @@ export default function Wizard({ user, defaultSuburb, tailor }: Props) {
             {photos.map((p, i) => <img key={p.url} src={p.url} alt={`Garment photo ${i + 1}`} />)}
           </div>
           <div className="est">Guide price for this job in Sydney: <b style={{ marginLeft: "auto" }}>${lo} – ${hi}</b></div>
-          <div className="est" style={{ marginTop: 8 }}>tailor me booking fee, charged only when you accept a quote: <b style={{ marginLeft: "auto" }}>$5.00</b></div>
+          <div className="est" style={{ marginTop: 8 }}>tailor me booking fee, charged only when you accept a quote: <b style={{ marginLeft: "auto", textAlign: "right" }}>{BOOKING_FEE_LABEL}</b></div>
           <div style={{ marginTop: 12 }}><Disclaimer /></div>
           <p className="intro-note">{INTRO}</p>
           <label className="ack" htmlFor="wAck">

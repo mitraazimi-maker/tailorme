@@ -1,30 +1,46 @@
 // Pure permission rules, kept free of I/O so they can be unit tested.
-import type { BookingStatus, ClubStatus, JobStatus, QuoteStatus } from "@prisma/client";
-import { MAX_QUOTES_PER_JOB } from "./catalog";
+import type { BookingStatus, ClubStatus, ClubTier, JobStatus, QuoteStatus } from "@prisma/client";
+import { HEAD_START_MINUTES, MAX_QUOTES_PER_JOB } from "./catalog";
 
 export type Verdict = { ok: true } | { ok: false; reason: string };
 const ok: Verdict = { ok: true };
 const no = (reason: string): Verdict => ({ ok: false, reason });
 
-type TailorLike = { id: string; userId: string; clubStatus: ClubStatus };
-type JobLike = { id: string; customerId: string; status: JobStatus; requestedTailorId?: string | null };
+type TailorLike = { id: string; userId: string; clubStatus: ClubStatus; clubTier: ClubTier };
+type JobLike = { id: string; customerId: string; status: JobStatus; createdAt: Date; requestedTailorId?: string | null };
 
 export const isClubMember = (t: { clubStatus: ClubStatus } | null | undefined) => t?.clubStatus === "ACTIVE";
+export const isPlus = (t: { clubStatus: ClubStatus; clubTier: ClubTier } | null | undefined) => isClubMember(t) && t?.clubTier === "PLUS";
 
-export function canQuote(tailor: TailorLike, job: JobLike, quoteCount: number, alreadyQuoted: boolean): Verdict {
+/** When a standard Club member can first see a job. Plus members and a tailor the customer asked for see it at once. */
+export function visibleFrom(tailor: TailorLike, job: Pick<JobLike, "createdAt" | "requestedTailorId">): Date {
+  if (isPlus(tailor) || job.requestedTailorId === tailor.id) return job.createdAt;
+  return new Date(job.createdAt.getTime() + HEAD_START_MINUTES * 60_000);
+}
+
+const headStartMessage = (tailor: TailorLike, job: JobLike, now: Date) => {
+  const mins = Math.ceil((visibleFrom(tailor, job).getTime() - now.getTime()) / 60_000);
+  return mins > 0 ? `Club Plus members get first look at new jobs. This one opens to you in ${mins} min.` : null;
+};
+
+export function canQuote(tailor: TailorLike, job: JobLike, quoteCount: number, alreadyQuoted: boolean, now = new Date()): Verdict {
   if (!isClubMember(tailor)) return no("Join the tailor me Club to quote on jobs.");
   if (job.customerId === tailor.userId) return no("You can’t quote on your own job.");
   if (job.status !== "OPEN") return no("This job is no longer taking quotes.");
+  const wait = headStartMessage(tailor, job, now);
+  if (wait) return no(wait);
   if (alreadyQuoted) return no("You’ve already quoted on this job.");
   if (quoteCount >= MAX_QUOTES_PER_JOB) return no("This job already has three quotes.");
   return ok;
 }
 
 /** Tailors see open jobs only while they're Club members; the booked tailor keeps access. */
-export function canTailorSeeJob(tailor: TailorLike, job: JobLike, bookedTailorId: string | null): Verdict {
+export function canTailorSeeJob(tailor: TailorLike, job: JobLike, bookedTailorId: string | null, now = new Date()): Verdict {
   if (bookedTailorId === tailor.id) return ok;
   if (job.status !== "OPEN") return no("This job is closed.");
   if (!isClubMember(tailor)) return no("Join the tailor me Club to see job details.");
+  const wait = headStartMessage(tailor, job, now);
+  if (wait) return no(wait);
   return ok;
 }
 
@@ -49,6 +65,6 @@ export function canReview(
   return ok;
 }
 
-/** Contact details are only shared once the $5 booking fee is paid. */
+/** Contact details are only shared once the booking fee is paid. */
 export const contactShared = (b: { status: BookingStatus } | null | undefined) =>
   !!b && (b.status === "CONFIRMED" || b.status === "COMPLETED");

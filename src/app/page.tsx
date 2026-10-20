@@ -53,7 +53,7 @@ export default async function Home() {
                 </li>
               ))}
             </ul>
-            <div className="ticket-foot"><span className="pulse" /> Example only · $5 booking fee only if you book</div>
+            <div className="ticket-foot"><span className="pulse" /> Example only · booking fee only if you book</div>
             <div style={{ padding: "12px 16px 16px" }}><Disclaimer /></div>
           </div>
         </div>
@@ -65,7 +65,7 @@ export default async function Home() {
           <div className="steps">
             <div className="step"><span className="n">Step 1</span><h3>Describe the job</h3><p>Pick the garment and the work, add at least one photo and your timeline. Takes about two minutes.</p></div>
             <div className="step"><span className="n">Step 2</span><h3>Compare quotes</h3><p>Up to three independent tailors reply with a guide price and a ready date. The final price is confirmed once they inspect the garment.</p></div>
-            <div className="step"><span className="n">Step 3</span><h3>Drop off or book a fitting</h3><p>Accept the quote you like for a flat $5 booking fee. Visit the studio or have them come to you. You deal with the tailor directly from there.</p></div>
+            <div className="step"><span className="n">Step 3</span><h3>Drop off or book a fitting</h3><p>Accept the quote you like and pay a small booking fee: 15% of the quote, minimum $5. Visit the studio or have them come to you. You deal with the tailor directly from there.</p></div>
           </div>
         </div>
       </section>

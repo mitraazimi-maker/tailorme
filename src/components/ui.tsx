@@ -35,9 +35,10 @@ export function Stars({ rating, count }: { rating: number | null; count?: number
   );
 }
 
-export function Flags({ t }: { t: Pick<TailorCard, "abnChecked" | "sameDay" | "comesToCustomer"> }) {
+export function Flags({ t }: { t: Pick<TailorCard, "abnChecked" | "sameDay" | "comesToCustomer" | "featured"> }) {
   return (
     <>
+      {t.featured && <span className="pill y" title="Club Plus member: paid placement">Featured</span>}
       {t.abnChecked && <span className="pill good">✓ ABN checked</span>}
       {t.sameDay && <span className="pill">Same day</span>}
       {t.comesToCustomer && <span className="pill">Comes to you</span>}

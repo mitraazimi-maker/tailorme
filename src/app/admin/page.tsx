@@ -35,7 +35,7 @@ export default async function Admin() {
               <tr key={t.id}>
                 <td><Link className="link" href={`/tailors/${t.slug}`}>{t.businessName}</Link><div className="muted">{t.suburb} · {t.user.email}{t.isSample && " · sample"}</div></td>
                 <td className="mono">{t.abn ? formatAbn(t.abn) : "—"}{t.abnEntityName && <div className="muted">{t.abnEntityName}</div>}</td>
-                <td><Status s={t.clubStatus} /></td>
+                <td><Status s={t.clubStatus} />{t.clubTier === "PLUS" && <div className="muted" style={{ marginTop: 4 }}>Plus</div>}</td>
                 <td>
                   <form action={setAbnStatus} className="row-wrap">
                     <input type="hidden" name="tailorId" value={t.id} />

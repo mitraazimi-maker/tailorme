@@ -1,6 +1,6 @@
 # tailor me
 
-Sydney marketplace for everyday alterations and repairs. Customers post a job with photos, up to three local tailors send guide quotes, and the customer books one for a flat $5 fee. Tailors pay $10/month for the tailor me Club.
+Sydney marketplace for everyday alterations and repairs. Customers post a job with photos, up to three local tailors send guide quotes, and the customer books one for a fee of 15% of the quote (minimum $5). Tailors pay $10/month for the tailor me Club, or $29/month for Club Plus (featured in search, 15-minute head start on new jobs, portfolio).
 
 Read `CLAUDE.md` first. It holds the product rules (disclaimers, "ABN checked", reviews only from bookings) that the code enforces.
 
@@ -8,7 +8,7 @@ Read `CLAUDE.md` first. It holds the product rules (disclaimers, "ABN checked", 
 
 - Next.js 15 (App Router, server actions), TypeScript
 - PostgreSQL via Prisma
-- Stripe Checkout (the $5 booking fee) and Stripe Billing (the $10/month Club)
+- Stripe Checkout (the booking fee) and Stripe Billing (Club $10/month, Club Plus $29/month)
 - Email/password accounts with database sessions (bcrypt, httpOnly cookie)
 - Job photos stored on local disk and served through an access-checked route
 
@@ -44,14 +44,15 @@ npm run build
 
 1. **Database:** any managed Postgres (Neon, Supabase, RDS). Set `DATABASE_URL` and run `npm run db:deploy`. Don't seed.
 2. **Stripe:**
-   - Create a recurring A$10/month price and set `STRIPE_CLUB_PRICE_ID`.
+   - Create recurring prices of A$10/month (Club) and A$29/month (Club Plus), and set `STRIPE_CLUB_PRICE_ID` and `STRIPE_CLUB_PLUS_PRICE_ID`.
    - Set `STRIPE_SECRET_KEY` and `PAYMENTS_MODE=stripe`.
    - Add a webhook to `/api/stripe/webhook` for `checkout.session.completed` and `customer.subscription.created`, `customer.subscription.updated` and `customer.subscription.deleted`, then set `STRIPE_WEBHOOK_SECRET`.
    - Turn on the customer billing portal.
-3. **Photos:** `src/lib/storage.ts` writes to local disk. On Vercel or any host without a persistent disk, swap it for S3/R2 before launch.
-4. **Email:** `src/lib/notify.ts` only logs to the console. Wire it to Resend, Postmark or SES.
-5. **ABN Lookup:** register for a free GUID and set `ABN_LOOKUP_GUID` so ABNs are checked automatically. Without it, an admin checks them on `/admin`.
-6. **`APP_URL`:** set it to the public https URL.
+3. **Job alerts for standard Club members** go out 15 minutes after posting. Set `CRON_SECRET` and call `GET /api/cron/notify` every 5 minutes with `Authorization: Bearer <CRON_SECRET>` (Vercel Cron or any scheduler).
+4. **Photos:** `src/lib/storage.ts` writes to local disk. On Vercel or any host without a persistent disk, swap it for S3/R2 before launch.
+5. **Email:** `src/lib/notify.ts` only logs to the console. Wire it to Resend, Postmark or SES.
+6. **ABN Lookup:** register for a free GUID and set `ABN_LOOKUP_GUID` so ABNs are checked automatically. Without it, an admin checks them on `/admin`.
+7. **`APP_URL`:** set it to the public https URL.
 
 ## How the code is laid out
 

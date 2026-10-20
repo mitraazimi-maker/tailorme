@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DISCLAIMER, INTRO, categoryFor, estimate } from "./catalog";
+import { DISCLAIMER, INTRO, bookingFeeCents, categoryFor, estimate } from "./catalog";
 
 describe("copy that must stay verbatim (CLAUDE.md rules 2 and 4)", () => {
   it("disclaimer", () =>
@@ -26,4 +26,16 @@ describe("estimate", () => {
     expect(estimate("Jacket / coat", "Shorten / hem", "Flexible")).toEqual([20, 55]);
     expect(estimate("Trousers / jeans", "Shorten / hem", "This week")).toEqual([20, 50]);
   });
+});
+
+describe("bookingFeeCents (15%, $5 minimum, no cap)", () => {
+  it("never charges less than $5", () => {
+    expect(bookingFeeCents(1400)).toBe(500);
+    expect(bookingFeeCents(3300)).toBe(500);
+  });
+  it("charges 15% above $33.33", () => {
+    expect(bookingFeeCents(6000)).toBe(900);
+    expect(bookingFeeCents(20000)).toBe(3000);
+  });
+  it("rounds to the cent", () => expect(bookingFeeCents(4567)).toBe(685));
 });

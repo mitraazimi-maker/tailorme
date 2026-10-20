@@ -1,8 +1,10 @@
-import { saveProfile, saveServices } from "@/app/actions/tailor";
+import Link from "next/link";
+import { addPortfolioPhotos, removePortfolioPhoto, saveProfile, saveServices } from "@/app/actions/tailor";
 import { requireTailor } from "@/lib/auth";
 import { formatAbn } from "@/lib/abn";
-import { CATEGORIES } from "@/lib/catalog";
+import { CATEGORIES, MAX_PORTFOLIO_PHOTOS } from "@/lib/catalog";
 import { db } from "@/lib/db";
+import { isPlus } from "@/lib/rules";
 import { SUBURB_NAMES } from "@/lib/suburbs";
 import { TailorTabs } from "../TailorTabs";
 
@@ -13,7 +15,11 @@ const ABN_LABEL = { UNCHECKED: "Waiting to be checked", CHECKED: "ABN checked", 
 export default async function TailorProfileEdit({ searchParams }: { searchParams: Promise<{ saved?: string; error?: string; welcome?: string }> }) {
   const { user, tailor } = await requireTailor("/tailor/profile");
   const sp = await searchParams;
-  const services = await db.service.findMany({ where: { tailorId: tailor.id }, orderBy: { sortOrder: "asc" } });
+  const [services, portfolio] = await Promise.all([
+    db.service.findMany({ where: { tailorId: tailor.id }, orderBy: { sortOrder: "asc" } }),
+    db.portfolioPhoto.findMany({ where: { tailorId: tailor.id }, orderBy: { createdAt: "desc" } }),
+  ]);
+  const plus = isPlus(tailor);
   const rows = [...services, ...Array.from({ length: Math.max(3, 10 - services.length) }, () => null)].slice(0, Math.max(10, services.length + 3));
 
   return (
@@ -85,6 +91,40 @@ export default async function TailorProfileEdit({ searchParams }: { searchParams
         ))}
         <button className="btn btn-primary">Save prices</button>
       </form>
+      <div className="panel stack" id="portfolio">
+        <div className="row-wrap" style={{ justifyContent: "space-between" }}>
+          <h2 style={{ margin: 0 }}>Portfolio</h2>
+          <span className="pill y">Club Plus</span>
+        </div>
+        {!plus ? (
+          <p className="muted small">Show customers your best work: up to {MAX_PORTFOLIO_PHOTOS} photos on your profile. <Link className="link" href="/tailor">Upgrade to Club Plus</Link>.</p>
+        ) : (
+          <>
+            <p className="small muted">Your own photos of finished work, shown on your public profile. {portfolio.length} / {MAX_PORTFOLIO_PHOTOS}.</p>
+            {portfolio.length > 0 && (
+              <div className="photos">
+                {portfolio.map((p) => (
+                  <div key={p.id} style={{ position: "relative" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`/api/portfolio/${p.id}`} alt={p.caption ?? "Portfolio photo"} style={{ width: "100%", aspectRatio: "1", objectFit: "cover", borderRadius: 12, border: "1px solid var(--line)", display: "block" }} />
+                    <form action={removePortfolioPhoto} style={{ position: "absolute", top: 6, right: 6 }}>
+                      <input type="hidden" name="id" value={p.id} />
+                      <button className="btn btn-ghost btn-sm" aria-label="Remove photo">Remove</button>
+                    </form>
+                  </div>
+                ))}
+              </div>
+            )}
+            {portfolio.length < MAX_PORTFOLIO_PHOTOS && (
+              <form action={addPortfolioPhotos} className="stack">
+                <input className="inp" type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple required aria-label="Portfolio photos" />
+                <input className="inp" name="caption" maxLength={120} placeholder="Caption (optional), e.g. Wool trousers, hemmed and pressed" />
+                <button className="btn btn-primary">Upload</button>
+              </form>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

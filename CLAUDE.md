@@ -13,7 +13,8 @@ A Sydney marketplace that connects people with local tailors and seamstresses fo
 ## Business model (decided)
 
 - **Tailors:** $10/month membership, called **the tailor me Club**. No lead fees. No commission. Unlimited quotes.
-- **Customers:** posting a job is free. A flat **$5 booking fee per job** (not per item) is charged only when the customer **accepts a quote**.
+- **Club Plus** (decided 20 Oct 2026): **$29/month**. Featured first in search (always labelled "Featured" and disclosed as paid placement), a **15-minute head start** on new matching jobs, and a portfolio gallery (up to 12 photos).
+- **Customers:** posting a job is free. A **booking fee of 15% of the accepted guide quote, minimum $5, no cap** (changed 20 Oct 2026 from a flat $5), per job, charged only when the customer **accepts a quote**. Always show the exact fee before they pay.
 - Customers pay the tailor **directly** for the work. Payment for the work does not run through the platform.
 - **Introductions only.** tailor me is not a party to the agreement between customer and tailor and is not responsible for disputes, damaged garments or the work itself. Tailors are independent businesses.
 - Tailors **will not** be required to hold public liability insurance. Tailors want simplicity.
@@ -71,9 +72,11 @@ Where the hard rules live in code. Keep them there, not scattered:
 - "ABN checked" badge only when `abnStatus = CHECKED` (ABN Lookup or an admin on `/admin`). Never add a stronger badge.
 - Reviews: created only through `leaveReview` against a paid booking. There is no update path for reviews anywhere, including admin. Keep it that way.
 - Only Club members (`clubStatus = ACTIVE`) are listed publicly, get job alerts, see job photos and can quote. Max three quotes per job.
+- Booking fee: `bookingFeeCents()` in `src/lib/catalog.ts` (unit tested). The fee is fixed on the booking when the quote is accepted.
+- Club Plus: `isPlus()` and the head start (`visibleFrom`) live in `src/lib/rules.ts`. Plus members are alerted on posting; standard Club members by `/api/cron/notify` after 15 minutes. "Featured" only reorders the default "Best match" sort; an explicit sort the customer picks is respected. Never show Featured without the label.
 - Sample data (`isSample`) is dev-only; the seed refuses to run in production, and a banner shows while any exists.
 
-Payments: `PAYMENTS_MODE=simulate` gives a fake checkout page and only works when `APP_URL` is localhost. Production uses Stripe Checkout for the $5 fee and Stripe Billing for the Club, synced by `/api/stripe/webhook`. Booking confirmation is idempotent (`src/lib/bookings.ts`).
+Payments: `PAYMENTS_MODE=simulate` gives a fake checkout page and only works when `APP_URL` is localhost. Production uses Stripe Checkout for the booking fee and Stripe Billing for Club and Club Plus (tier comes from the subscription price), synced by `/api/stripe/webhook`. Booking confirmation is idempotent (`src/lib/bookings.ts`).
 
 Not built yet: real email (`src/lib/notify.ts` only logs), cloud photo storage (`src/lib/storage.ts` writes to disk), in-app messaging, tailor portfolio photos, password reset, suburb SEO pages.
 
@@ -88,7 +91,7 @@ Not built yet: real email (`src/lib/notify.ts` only logs), cloud photo storage (
 
 ## Known risks
 
-- Low revenue ceiling ($10/month + $5/booking) means volume is everything. Go dense in a few suburbs first.
-- Repeat customers may go direct to the tailor to skip the $5.
+- Low revenue ceiling ($10–29/month + 15%/min $5 per booking) means volume is everything. Go dense in a few suburbs first.
+- Repeat customers may go direct to the tailor to skip the booking fee. The percentage fee makes this more likely on big jobs.
 - The brand promises an experience the tailors must deliver. Keep the luxury in what tailor me controls: booking, messages, fit profile, the four standards.
 - Competitors: Google Maps "alterations near me", Airtasker (lists tailoring in Sydney).

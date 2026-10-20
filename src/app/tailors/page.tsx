@@ -77,6 +77,9 @@ export default async function Results({ searchParams }: { searchParams: Promise<
             </select>
           </label>
         </div>
+        {sort === "match" && results.some((t) => t.featured) && (
+          <p className="small muted" style={{ marginBottom: 10 }}>Featured tailors are Club Plus members who pay to appear first. Change the sort to see everyone in order.</p>
+        )}
         {unknownSuburb && <p className="notice" style={{ marginBottom: 14 }}>We don’t know “{one(sp.suburb)}” yet, so we’re showing tailors near {suburb}.</p>}
         <div className="list">
           {results.length ? results.map((t) => <TailorRow key={t.id} t={t} />) : <div className="empty">No tailors match those filters. Widen the distance or clear a filter.</div>}

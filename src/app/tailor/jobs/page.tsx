@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { Status } from "@/components/ui";
 import { requireTailor } from "@/lib/auth";
-import { CATEGORIES, MAX_QUOTES_PER_JOB, catName, isCategory } from "@/lib/catalog";
+import { CATEGORIES, HEAD_START_MINUTES, MAX_QUOTES_PER_JOB, catName, isCategory } from "@/lib/catalog";
 import { db } from "@/lib/db";
-import { isClubMember } from "@/lib/rules";
+import { isClubMember, visibleFrom } from "@/lib/rules";
 import { distanceKm } from "@/lib/suburbs";
 import { TailorTabs } from "../TailorTabs";
 
@@ -31,10 +31,14 @@ export default async function JobFeed({ searchParams }: { searchParams: Promise<
     orderBy: { createdAt: "desc" },
     take: 100,
   });
-  const visible = jobs
+  const now = new Date();
+  const matching = jobs
     .map((j) => ({ ...j, km: distanceKm(tailor.suburb, j.suburb) }))
     .filter((j) => j.requestedTailorId === tailor.id || all || j.km == null || j.km <= RADIUS_KM)
     .filter((j) => j.quotes.length < MAX_QUOTES_PER_JOB || j.quotes.some((q) => q.tailorId === tailor.id));
+  // Jobs still in the Club Plus head start are counted, not shown.
+  const visible = matching.filter((j) => visibleFrom(tailor, j) <= now);
+  const held = matching.length - visible.length;
 
   return (
     <div className="wrap page">
@@ -46,6 +50,12 @@ export default async function JobFeed({ searchParams }: { searchParams: Promise<
       {!member && (
         <p className="notice bad" style={{ marginBottom: 16 }}>
           You can see that jobs exist, but photos and quoting are for Club members. <Link className="link" href="/tailor">Join the Club</Link>.
+        </p>
+      )}
+      {held > 0 && (
+        <p className="notice" style={{ marginBottom: 16 }}>
+          {held} new job{held === 1 ? " is" : "s are"} in the {HEAD_START_MINUTES}-minute Club Plus head start and will appear here shortly.{" "}
+          <Link className="link" href="/tailor">Upgrade to Club Plus</Link> to see new jobs first.
         </p>
       )}
       {visible.length === 0 ? (
