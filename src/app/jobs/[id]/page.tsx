@@ -200,7 +200,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
             <dl className="kv" style={{ marginTop: 14 }}>
               <dt>Fitting</dt><dd>{job.fitting ?? "Tailor to advise"}</dd>
               <dt>Timing</dt><dd>{job.timing}</dd>
-              <dt>Pickup</dt><dd>{job.wantsPickup ? "Collect, deliver & fit at home" : "I’ll drop it off"}</dd>
+              <dt>Pickup</dt><dd>{job.wantsPickup ? "Collect with home fitting, then deliver" : "I’ll drop it off"}</dd>
               <dt>Guide price</dt><dd className="num">${lo} – ${hi}</dd>
             </dl>
           </div>

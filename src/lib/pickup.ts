@@ -17,6 +17,6 @@ export const pickupPriceLabel = (cents: number | null | undefined) =>
 
 export const PICKUP_RADII_KM = [3, 5, 8, 12, 20];
 
-/** Every tailor who offers pickup includes this (decided 1 Nov 2026). */
-export const HOME_FITTING = "Free fitting at home: pinned on you when it’s collected, and the fit checked when it comes back.";
+/** Every tailor who offers pickup includes a fitting at pickup only (decided 1 Nov 2026). */
+export const HOME_FITTING = "Free fitting at home when it’s collected: the tailor pins it on you before taking it away.";
 export const PICKUP_NAME = "Pickup, delivery & home fitting";

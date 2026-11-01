@@ -78,7 +78,7 @@ export default async function TailorProfileEdit({ searchParams }: { searchParams
             <label htmlFor="pickupNote">When you collect (optional)</label>
             <input className="inp" id="pickupNote" name="pickupNote" maxLength={120} defaultValue={tailor.pickupNote ?? ""} placeholder="e.g. Tuesday and Thursday evenings" />
           </div>
-          <span className="hint small muted">Included every time: pin the garment on the customer when you collect it, and check the fit when you bring it back. This is your own service: you set the price, the customer pays you directly, and you look after the garment in transit. Customers see it on your profile and in your quotes.</span>
+          <span className="hint small muted">Included every time: pin the garment on the customer when you collect it. Delivery is a drop-off, no second fitting. This is your own service: you set the price, the customer pays you directly, and you look after the garment in transit. Customers see it on your profile and in your quotes.</span>
         </fieldset>
         <div className="two">
           <div className="field" style={{ marginTop: 0 }}><label htmlFor="yearsExperience">Years of experience</label><input className="inp" id="yearsExperience" name="yearsExperience" type="number" min={0} max={80} defaultValue={tailor.yearsExperience ?? ""} /></div>
