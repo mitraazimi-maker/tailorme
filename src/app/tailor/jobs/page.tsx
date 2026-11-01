@@ -76,6 +76,7 @@ export default async function JobFeed({ searchParams }: { searchParams: Promise<
                   <div className="small muted">
                     {catName(j.category)} · {j.quotes.length}/{MAX_QUOTES_PER_JOB} quotes
                     {j.requestedTailorId === tailor.id && (j.exclusive ? " · rebook from your customer" : " · asked for you")}
+                    {j.wantsPickup && " · wants pickup & home fitting"}
                   </div>
                 </div>
                 {quoted ? <Status s="PENDING" label="quoted" /> : <span className="btn btn-ink btn-sm">Quote</span>}

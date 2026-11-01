@@ -6,6 +6,7 @@ import { patternFor, type TailorCard } from "./tailor-display";
 export { patternFor, replyLabel, type TailorCard } from "./tailor-display";
 import { db } from "./db";
 import { activeMemberWhere, isPlus } from "./rules";
+import { picksUpFrom } from "./pickup";
 import { distanceKm } from "./suburbs";
 
 /** Only Club members are listed publicly. */
@@ -47,6 +48,7 @@ async function decorate(rows: Prisma.TailorProfileGetPayload<{ include: { servic
       abnChecked: t.abnStatus === "CHECKED",
       featured: isPlus(t),
       comesToCustomer: t.comesToCustomer,
+      pickupFeeCents: near && picksUpFrom(t, near) ? (t.pickupFeeCents ?? 0) : null,
       sameDay: t.sameDay,
       bio: t.bio,
       pat: patternFor(t.categories),
@@ -59,6 +61,7 @@ export type Search = {
   suburb?: string;
   cats?: string[];
   mobile?: boolean;
+  pickup?: boolean;
   express?: boolean;
   maxKm?: number;
   minRating?: number;
@@ -71,6 +74,7 @@ export async function searchTailors(s: Search): Promise<TailorCard[]> {
       ...listed(),
       ...(s.cats?.length ? { categories: { hasSome: s.cats } } : {}),
       ...(s.mobile ? { comesToCustomer: true } : {}),
+      ...(s.pickup ? { offersPickup: true } : {}),
       ...(s.express ? { sameDay: true } : {}),
     },
     include: { services: true },
@@ -83,6 +87,8 @@ export async function searchTailors(s: Search): Promise<TailorCard[]> {
     const hay = new Map(rows.map((t) => [t.id, [t.businessName, t.bio, ...t.services.map((x) => x.name), ...t.categories.map(catName)].join(" ").toLowerCase()]));
     if (words.length) cards = cards.filter((c) => words.some((w) => hay.get(c.id)!.includes(w)));
   }
+  // Pickup filter: only tailors who actually collect from the searched suburb.
+  if (s.pickup) cards = cards.filter((c) => c.pickupFeeCents != null);
   if (s.maxKm != null) cards = cards.filter((c) => c.km == null || c.km <= s.maxKm!);
   if (s.minRating) cards = cards.filter((c) => (c.rating ?? 0) >= s.minRating!);
 

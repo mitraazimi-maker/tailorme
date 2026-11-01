@@ -21,6 +21,7 @@ export default async function Results({ searchParams }: { searchParams: Promise<
     suburb,
     cats: list(sp.cat).filter(isCategory),
     mobile: one(sp.mobile) === "1",
+    pickup: one(sp.pickup) === "1",
     express: one(sp.express) === "1",
     maxKm,
     minRating: Number(one(sp.rating)) || 0,
@@ -47,6 +48,7 @@ export default async function Results({ searchParams }: { searchParams: Promise<
           </div>
           <div>
             <h4>Options</h4>
+            <label className="check"><input type="checkbox" name="pickup" value="1" defaultChecked={s.pickup} />Picks up &amp; delivers to {suburb}, with home fitting</label>
             <label className="check"><input type="checkbox" name="mobile" value="1" defaultChecked={s.mobile} />Comes to me for fittings</label>
             <label className="check"><input type="checkbox" name="express" value="1" defaultChecked={s.express} />Same-day available</label>
           </div>

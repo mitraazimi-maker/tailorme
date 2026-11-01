@@ -4,6 +4,7 @@ import { Disclaimer, Flags, IntroNote, Stars } from "@/components/ui";
 import { getUser } from "@/lib/auth";
 import { BOOKING_FEE_LABEL, catName } from "@/lib/catalog";
 import { bookedTailorIds } from "@/lib/bookings";
+import { HOME_FITTING, PICKUP_NAME, pickupPriceLabel } from "@/lib/pickup";
 import { db } from "@/lib/db";
 import { isClubMember } from "@/lib/rules";
 import { fabric, money } from "@/lib/fabric";
@@ -106,11 +107,19 @@ export default async function Profile({ params }: { params: Promise<{ slug: stri
           <h3>{reply ? `Usually replies in ${reply}` : "Replies within two hours in opening hours"}</h3>
           <div className="facts">
             <div><small>From</small><b className="num">{money(card.fromCents)}</b></div>
-            <div><small>Fittings</small><b>{t.comesToCustomer ? "Studio or home" : "At studio"}</b></div>
+            <div><small>Fittings</small><b>{t.comesToCustomer || t.offersPickup ? "Studio or home" : "At studio"}</b></div>
             <div><small>Rush jobs</small><b>{t.sameDay ? "Same day" : "Not offered"}</b></div>
             <div><small>Speaks</small><b>{t.languages.join(", ") || "English"}</b></div>
           </div>
           {t.openingHours && <p className="small muted">Hours: {t.openingHours}</p>}
+          {t.offersPickup && (
+            <div className="mytailor" style={{ flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
+              <b style={{ color: "var(--ink)" }}>{PICKUP_NAME} · {pickupPriceLabel(t.pickupFeeCents)}</b>
+              <span>Within {t.pickupRadiusKm} km of {t.suburb}{t.pickupNote ? ` · ${t.pickupNote}` : ""}.</span>
+              <span>{HOME_FITTING}</span>
+              <span className="small">Arranged with and paid to the tailor.</span>
+            </div>
+          )}
           {user?.id !== t.userId && (
             <>
               {repeat ? (

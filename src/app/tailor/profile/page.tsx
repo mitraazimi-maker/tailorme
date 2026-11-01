@@ -3,6 +3,7 @@ import { addPortfolioPhotos, removePortfolioPhoto, saveProfile, saveServices } f
 import { requireTailor } from "@/lib/auth";
 import { formatAbn } from "@/lib/abn";
 import { CATEGORIES, MAX_PORTFOLIO_PHOTOS } from "@/lib/catalog";
+import { PICKUP_RADII_KM } from "@/lib/pickup";
 import { db } from "@/lib/db";
 import { isPlus } from "@/lib/rules";
 import { SUBURB_NAMES } from "@/lib/suburbs";
@@ -57,6 +58,28 @@ export default async function TailorProfileEdit({ searchParams }: { searchParams
           <label className="check"><input type="checkbox" name="comesToCustomer" defaultChecked={tailor.comesToCustomer} />I can come to customers for fittings</label>
           <label className="check"><input type="checkbox" name="sameDay" defaultChecked={tailor.sameDay} />I offer same-day rush jobs</label>
         </div>
+        <fieldset className="panel stack" style={{ padding: 16, background: "var(--paper-2)", border: 0 }}>
+          <label className="check" style={{ fontWeight: 600 }}>
+            <input type="checkbox" name="offersPickup" defaultChecked={tailor.offersPickup} />I pick up and deliver, with a free fitting at home
+          </label>
+          <div className="two">
+            <div className="field" style={{ marginTop: 0 }}>
+              <label htmlFor="pickupFee">Fee for pickup, delivery &amp; fitting ($)</label>
+              <input className="inp" id="pickupFee" name="pickupFee" type="number" min={0} max={200} step="1" inputMode="numeric" defaultValue={tailor.pickupFeeCents != null ? tailor.pickupFeeCents / 100 : ""} placeholder="e.g. 15, or 0 for free" />
+            </div>
+            <div className="field" style={{ marginTop: 0 }}>
+              <label htmlFor="pickupRadiusKm">How far you’ll travel</label>
+              <select className="inp" id="pickupRadiusKm" name="pickupRadiusKm" defaultValue={String(tailor.pickupRadiusKm)}>
+                {PICKUP_RADII_KM.map((km) => <option key={km} value={km}>Within {km} km of {tailor.suburb}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="field" style={{ marginTop: 0 }}>
+            <label htmlFor="pickupNote">When you collect (optional)</label>
+            <input className="inp" id="pickupNote" name="pickupNote" maxLength={120} defaultValue={tailor.pickupNote ?? ""} placeholder="e.g. Tuesday and Thursday evenings" />
+          </div>
+          <span className="hint small muted">Included every time: pin the garment on the customer when you collect it, and check the fit when you bring it back. This is your own service: you set the price, the customer pays you directly, and you look after the garment in transit. Customers see it on your profile and in your quotes.</span>
+        </fieldset>
         <div className="two">
           <div className="field" style={{ marginTop: 0 }}><label htmlFor="yearsExperience">Years of experience</label><input className="inp" id="yearsExperience" name="yearsExperience" type="number" min={0} max={80} defaultValue={tailor.yearsExperience ?? ""} /></div>
           <div className="field" style={{ marginTop: 0 }}><label htmlFor="languages">Languages</label><input className="inp" id="languages" name="languages" defaultValue={tailor.languages.join(", ")} placeholder="English, Vietnamese" /></div>

@@ -22,6 +22,7 @@ const JobIn = z.object({
   ack: z.literal("on", { errorMap: () => ({ message: "Tick the box to confirm you understand how quotes and bookings work." }) }),
   tailor: z.string().optional(),
   rebook: z.literal("1").optional(),
+  wantsPickup: z.literal("1").optional(),
 });
 
 const NewCustomer = z.object({
@@ -100,6 +101,7 @@ export async function POST(req: Request) {
           acknowledgedAt: new Date(),
           requestedTailorId: requested?.id ?? null,
           exclusive,
+          wantsPickup: d.wantsPickup === "1",
           photos: { create: keys.map((storageKey, i) => ({ storageKey, mime: photos[i].mime, bytes: photos[i].buf.length })) },
         },
       });

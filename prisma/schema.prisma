@@ -106,6 +106,12 @@ model TailorProfile {
   categories      String[]
   comesToCustomer Boolean   @default(false)
   sameDay         Boolean   @default(false)
+  // Pickup & delivery is the tailor's own service at their own price, paid to them
+  // directly. tailor me only shows it and passes the request on.
+  offersPickup    Boolean   @default(false)
+  pickupFeeCents  Int?
+  pickupRadiusKm  Int       @default(8)
+  pickupNote      String?
   openingHours    String?
   shopAddress     String?
 
@@ -189,6 +195,8 @@ model Job {
   clubNotifiedAt    DateTime?
   // A rebook sent only to the customer's own tailor until they open it up.
   exclusive         Boolean    @default(false)
+  // The customer would like the tailor to collect and return the garment.
+  wantsPickup       Boolean    @default(false)
   isSample          Boolean    @default(false)
   createdAt         DateTime   @default(now())
 
@@ -221,6 +229,8 @@ model Quote {
   priceCents Int
   readyBy    DateTime
   message    String      @default("")
+  // The tailor's pickup & delivery charge for this job (paid to the tailor, not tailor me).
+  pickupFeeCents Int?
   status     QuoteStatus @default(PENDING)
   createdAt  DateTime    @default(now())
 

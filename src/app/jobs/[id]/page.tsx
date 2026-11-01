@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Disclaimer, IntroNote, Stars, Status } from "@/components/ui";
 import { acceptQuote, cancelJob, leaveReview, openJobToAll, reportOffPlatform } from "@/app/actions/customer";
 import { bookedTailorIds, spendablePoints } from "@/lib/bookings";
+import { pickupPriceLabel } from "@/lib/pickup";
 import { pointsEarned, voucherFor } from "@/lib/rewards";
 import { requireUser } from "@/lib/auth";
 import { BOOKING_FEE_LABEL, bookingFeeCents, estimate } from "@/lib/catalog";
@@ -69,6 +70,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
               <h2>Booked with {booking.tailor.businessName}</h2>
               <dl className="kv">
                 <dt>Guide price</dt><dd className="num">{money(booking.quote.priceCents)}</dd>
+                {booking.quote.pickupFeeCents != null && <><dt>Pickup, delivery &amp; home fitting</dt><dd className="num">{pickupPriceLabel(booking.quote.pickupFeeCents)}, paid to the tailor</dd></>}
                 <dt>Ready by</dt><dd>{booking.quote.readyBy.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })}</dd>
                 <dt>Email</dt><dd><a className="link" href={`mailto:${booking.tailor.user.email}`}>{booking.tailor.user.email}</a></dd>
                 {booking.tailor.user.phone && <><dt>Phone</dt><dd><a className="link" href={`tel:${booking.tailor.user.phone}`}>{booking.tailor.user.phone}</a></dd></>}
@@ -149,6 +151,10 @@ export default async function JobPage({ params, searchParams }: { params: Promis
                           <div className="small muted"><Stars rating={r?._avg.rating ?? null} count={r?._count} /> · {q.tailor.suburb} · ready {q.readyBy.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })}</div>
                         </div>
                         <div className="price">{money(q.priceCents)}</div>
+                        {q.pickupFeeCents != null && (
+                          <p className="msg small">+ {pickupPriceLabel(q.pickupFeeCents)} for pickup, delivery &amp; home fitting, paid to the tailor</p>
+                        )}
+                        {job.wantsPickup && q.pickupFeeCents == null && <p className="msg small">No pickup offered: you’d drop it off.</p>}
                         {q.message && <p className="msg">“{q.message}”</p>}
                         <div className="acts">
                           {job.status === "OPEN" && q.status === "PENDING" ? (
@@ -194,6 +200,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
             <dl className="kv" style={{ marginTop: 14 }}>
               <dt>Fitting</dt><dd>{job.fitting ?? "Tailor to advise"}</dd>
               <dt>Timing</dt><dd>{job.timing}</dd>
+              <dt>Pickup</dt><dd>{job.wantsPickup ? "Collect, deliver & fit at home" : "I’ll drop it off"}</dd>
               <dt>Guide price</dt><dd className="num">${lo} – ${hi}</dd>
             </dl>
           </div>

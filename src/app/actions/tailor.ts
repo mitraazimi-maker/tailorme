@@ -25,6 +25,9 @@ const ProfileIn = z.object({
   shopAddress: z.string().trim().max(200),
   phone: z.string().trim().max(30),
   abn: z.string().trim().max(20),
+  pickupFee: z.union([z.literal(""), z.coerce.number().min(0).max(200)]).optional(),
+  pickupRadiusKm: z.coerce.number().int().min(1).max(30).optional(),
+  pickupNote: z.string().trim().max(120).optional(),
 });
 
 export async function saveProfile(form: FormData) {
@@ -33,10 +36,12 @@ export async function saveProfile(form: FormData) {
   if (!parsed.success) back("/tailor/profile", parsed.error.issues[0].message);
   const d = parsed.data!;
   // These show on the public profile, so no contact details (the shop address and phone only show after booking).
-  for (const [field, label] of [["businessName", "business name"], ["bio", "intro"], ["openingHours", "opening hours"]] as const) {
+  for (const [field, label] of [["businessName", "business name"], ["bio", "intro"], ["openingHours", "opening hours"], ["pickupNote", "pickup times"]] as const) {
     const found = findContactDetails(d[field]);
     if (found) back("/tailor/profile", contactRefusal(label, found));
   }
+  if (form.get("offersPickup") === "on" && (d.pickupFee === "" || d.pickupFee == null))
+    back("/tailor/profile", "Set your pickup & delivery fee (0 if it’s free).");
   const suburb = findSuburb(d.suburb);
   if (!suburb) back("/tailor/profile", "Choose a Sydney suburb from the list.");
   const categories = form.getAll("categories").map(String).filter(isCategory);
@@ -67,6 +72,10 @@ export async function saveProfile(form: FormData) {
         categories,
         comesToCustomer: form.get("comesToCustomer") === "on",
         sameDay: form.get("sameDay") === "on",
+        offersPickup: form.get("offersPickup") === "on",
+        pickupFeeCents: d.pickupFee === "" || d.pickupFee == null ? null : Math.round(d.pickupFee * 100),
+        pickupRadiusKm: d.pickupRadiusKm ?? 8,
+        pickupNote: d.pickupNote || null,
         openingHours: d.openingHours || null,
         shopAddress: d.shopAddress || null,
         ...abnData,
@@ -103,6 +112,7 @@ const QuoteIn = z.object({
   price: z.coerce.number().positive("Enter a guide price.").max(5000),
   readyBy: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a ready date."),
   message: z.string().trim().max(600),
+  pickupFee: z.union([z.literal(""), z.coerce.number().min(0).max(200)]).optional(),
 });
 
 export async function submitQuote(form: FormData) {
@@ -128,7 +138,10 @@ export async function submitQuote(form: FormData) {
         ]);
         const verdict = canQuote(tailor, job, count, !!mine);
         if (!verdict.ok) throw new QuoteRefused(verdict.reason);
-        await tx.quote.create({ data: { jobId, tailorId: tailor.id, priceCents: Math.round(d.price * 100), readyBy, message: d.message } });
+        // Pickup is only quoted when the customer asked for it and the tailor offers it.
+        const pickupFeeCents =
+          job.wantsPickup && tailor.offersPickup && d.pickupFee !== "" && d.pickupFee != null ? Math.round(d.pickupFee * 100) : null;
+        await tx.quote.create({ data: { jobId, tailorId: tailor.id, priceCents: Math.round(d.price * 100), readyBy, message: d.message, pickupFeeCents } });
       },
       { isolationLevel: "Serializable" },
     );

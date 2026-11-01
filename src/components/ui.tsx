@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { DISCLAIMER, INTRO, catName } from "@/lib/catalog";
 import { fabric, money } from "@/lib/fabric";
+import { HOME_FITTING, pickupPriceLabel } from "@/lib/pickup";
 import { replyLabel, type TailorCard } from "@/lib/tailor-display";
 
 /** Rule 2: shown wherever a price or quote appears. */
@@ -35,13 +36,14 @@ export function Stars({ rating, count }: { rating: number | null; count?: number
   );
 }
 
-export function Flags({ t }: { t: Pick<TailorCard, "abnChecked" | "sameDay" | "comesToCustomer" | "featured"> }) {
+export function Flags({ t }: { t: Pick<TailorCard, "abnChecked" | "sameDay" | "comesToCustomer" | "featured"> & { pickupFeeCents?: number | null } }) {
   return (
     <>
       {t.featured && <span className="pill y" title="Club Plus member: paid placement">Featured</span>}
       {t.abnChecked && <span className="pill good">✓ ABN checked</span>}
       {t.sameDay && <span className="pill">Same day</span>}
       {t.comesToCustomer && <span className="pill">Comes to you</span>}
+      {t.pickupFeeCents != null && <span className="pill" title={HOME_FITTING}>Pickup + home fitting {pickupPriceLabel(t.pickupFeeCents)}</span>}
     </>
   );
 }

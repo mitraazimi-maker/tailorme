@@ -25,6 +25,7 @@ export default function Wizard({ user, defaultSuburb, tailor, rebook }: Props) {
   const [description, setDescription] = useState("");
   const [fitting, setFitting] = useState<string | null>(null);
   const [timing, setTiming] = useState<string | null>(null);
+  const [wantsPickup, setWantsPickup] = useState(false);
   const [suburb, setSuburb] = useState(defaultSuburb);
   const [photos, setPhotos] = useState<{ file: File; url: string }[]>([]);
   const [firstName, setFirstName] = useState("");
@@ -85,6 +86,7 @@ export default function Wizard({ user, defaultSuburb, tailor, rebook }: Props) {
     fd.set("fitting", fitting ?? "");
     fd.set("timing", timing!);
     fd.set("suburb", suburb);
+    if (wantsPickup) fd.set("wantsPickup", "1");
     fd.set("ack", "on");
     if (tailor) fd.set("tailor", tailor.slug);
     if (rebook) fd.set("rebook", "1");
@@ -209,6 +211,13 @@ export default function Wizard({ user, defaultSuburb, tailor, rebook }: Props) {
             <datalist id="wiz-suburbs">{SUBURB_NAMES.map((s) => <option key={s} value={s} />)}</datalist>
             <span className="hint">Tailors see your first name and suburb only, until you book.</span>
           </div>
+          <label className="ack" htmlFor="wPickup">
+            <input type="checkbox" id="wPickup" checked={wantsPickup} onChange={(e) => setWantsPickup(e.target.checked)} />
+            <span>
+              <b>Collect it from me and bring it back</b>, with a free fitting at home: pinned on you at pickup, fit checked on delivery.
+              <span className="hint" style={{ display: "block" }}>Tailors who offer it add their own pickup price to their quote, paid to them.</span>
+            </span>
+          </label>
         </>
       )}
 
@@ -239,6 +248,7 @@ export default function Wizard({ user, defaultSuburb, tailor, rebook }: Props) {
               ["Work", work],
               ["Fitting", fitting ?? "Tailor to advise"],
               ["Timing", timing],
+              ["Pickup", wantsPickup ? "Collect, deliver & fit at home" : "I’ll drop it off"],
               ["Location", findSuburb(suburb) ?? suburb],
               ["Photos", `${photos.length} attached`],
               ["Contact", user ? `${user.firstName} · ${user.email}` : `${firstName} · ${email}`],

@@ -16,6 +16,8 @@ export type TailorCard = {
   /** Club Plus: shown first in "Best match" and always labelled "Featured". */
   featured: boolean;
   comesToCustomer: boolean;
+  /** Set when the tailor collects from the suburb being searched: their fee in cents (0 = free). */
+  pickupFeeCents: number | null;
   sameDay: boolean;
   bio: string;
   pat: Pattern;

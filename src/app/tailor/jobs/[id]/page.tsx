@@ -7,6 +7,7 @@ import { MAX_QUOTES_PER_JOB, estimate } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { money } from "@/lib/fabric";
 import { canQuote, canTailorSeeJob, contactShared } from "@/lib/rules";
+import { HOME_FITTING, picksUpFrom, pickupPriceLabel } from "@/lib/pickup";
 import { distanceKm } from "@/lib/suburbs";
 
 export const metadata = { title: "Job" };
@@ -78,6 +79,7 @@ export default async function TailorJob({ params, searchParams }: { params: Prom
             <dl className="kv" style={{ marginTop: 14 }}>
               <dt>Fitting</dt><dd>{job.fitting ?? "Tailor to advise"}</dd>
               <dt>Timing</dt><dd>{job.timing}</dd>
+              <dt>Pickup</dt><dd>{job.wantsPickup ? "Wants pickup, delivery & home fitting" : "Will drop it off"}</dd>
               <dt>Customer saw a guide of</dt><dd className="num">${lo} – ${hi}</dd>
               <dt>Quotes so far</dt><dd className="num">{job.quotes.length} / {MAX_QUOTES_PER_JOB}</dd>
             </dl>
@@ -120,6 +122,7 @@ export default async function TailorJob({ params, searchParams }: { params: Prom
               <h2>Your quote</h2>
               <dl className="kv">
                 <dt>Guide price</dt><dd className="num">{money(mine.priceCents)}</dd>
+                {mine.pickupFeeCents != null && <><dt>Pickup &amp; home fitting</dt><dd className="num">{pickupPriceLabel(mine.pickupFeeCents)}</dd></>}
                 <dt>Ready by</dt><dd>{mine.readyBy.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })}</dd>
                 <dt>Status</dt><dd><Status s={mine.status} /></dd>
               </dl>
@@ -137,6 +140,17 @@ export default async function TailorJob({ params, searchParams }: { params: Prom
                 <div className="field" style={{ marginTop: 0 }}><label htmlFor="price">Guide price ($)</label><input className="inp" id="price" name="price" type="number" min={1} step="1" required inputMode="numeric" /></div>
                 <div className="field" style={{ marginTop: 0 }}><label htmlFor="readyBy">Ready by</label><input className="inp" id="readyBy" name="readyBy" type="date" min={isoDate(new Date())} required /></div>
               </div>
+              {job.wantsPickup && (
+                picksUpFrom(tailor, job.suburb) ? (
+                  <div className="field" style={{ marginTop: 0 }}>
+                    <label htmlFor="pickupFee">Pickup, delivery &amp; home fitting ($)</label>
+                    <input className="inp" id="pickupFee" name="pickupFee" type="number" min={0} max={200} step="1" defaultValue={(tailor.pickupFeeCents ?? 0) / 100} />
+                    <span className="hint">The customer asked for it. Your usual price is filled in; it’s paid to you. {HOME_FITTING}</span>
+                  </div>
+                ) : (
+                  <p className="notice small">The customer asked for pickup, delivery and a home fitting. {tailor.offersPickup ? `${job.suburb} is outside your ${tailor.pickupRadiusKm} km pickup area` : "You don’t offer pickup"}, so say in your message if they’ll need to drop it off.</p>
+                )
+              )}
               <div className="field" style={{ marginTop: 0 }}>
                 <label htmlFor="message">Message (optional)</label>
                 <textarea className="inp" id="message" name="message" maxLength={600} placeholder="e.g. Happy to keep the original hem. Drop off any weekday before 11." />
