@@ -7,16 +7,33 @@ const ok: Verdict = { ok: true };
 const no = (reason: string): Verdict => ({ ok: false, reason });
 
 type TailorLike = { id: string; userId: string; clubStatus: ClubStatus; clubTier: ClubTier };
-type JobLike = { id: string; customerId: string; status: JobStatus; createdAt: Date; requestedTailorId?: string | null };
+type JobLike = {
+  id: string;
+  customerId: string;
+  status: JobStatus;
+  createdAt: Date;
+  requestedTailorId?: string | null;
+  openToAllAt?: Date | null;
+  exclusive?: boolean;
+};
 
 export const isClubMember = (t: { clubStatus: ClubStatus } | null | undefined) => t?.clubStatus === "ACTIVE";
 export const isPlus = (t: { clubStatus: ClubStatus; clubTier: ClubTier } | null | undefined) => isClubMember(t) && t?.clubTier === "PLUS";
 
-/** When a standard Club member can first see a job. Plus members and a tailor the customer asked for see it at once. */
-export function visibleFrom(tailor: TailorLike, job: Pick<JobLike, "createdAt" | "requestedTailorId">): Date {
+/** End of the Club Plus head start for a job when one or more Plus members match it. */
+export const headStartEnds = (createdAt: Date) => new Date(createdAt.getTime() + HEAD_START_MINUTES * 60_000);
+
+/**
+ * When a tailor can first see a job. Plus members and a tailor the customer asked for see it at once;
+ * standard Club members see it at openToAllAt (straight away when no Plus member matched).
+ */
+export function visibleFrom(tailor: TailorLike, job: Pick<JobLike, "createdAt" | "requestedTailorId" | "openToAllAt">): Date {
   if (isPlus(tailor) || job.requestedTailorId === tailor.id) return job.createdAt;
-  return new Date(job.createdAt.getTime() + HEAD_START_MINUTES * 60_000);
+  return job.openToAllAt ?? headStartEnds(job.createdAt);
 }
+
+/** A rebook stays with the customer's own tailor until the customer opens it to others. */
+const exclusiveTo = (tailor: TailorLike, job: JobLike) => !!job.exclusive && job.requestedTailorId !== tailor.id;
 
 const headStartMessage = (tailor: TailorLike, job: JobLike, now: Date) => {
   const mins = Math.ceil((visibleFrom(tailor, job).getTime() - now.getTime()) / 60_000);
@@ -27,6 +44,7 @@ export function canQuote(tailor: TailorLike, job: JobLike, quoteCount: number, a
   if (!isClubMember(tailor)) return no("Join the tailor me Club to quote on jobs.");
   if (job.customerId === tailor.userId) return no("You can’t quote on your own job.");
   if (job.status !== "OPEN") return no("This job is no longer taking quotes.");
+  if (exclusiveTo(tailor, job)) return no("The customer sent this job to their own tailor.");
   const wait = headStartMessage(tailor, job, now);
   if (wait) return no(wait);
   if (alreadyQuoted) return no("You’ve already quoted on this job.");
@@ -39,6 +57,7 @@ export function canTailorSeeJob(tailor: TailorLike, job: JobLike, bookedTailorId
   if (bookedTailorId === tailor.id) return ok;
   if (job.status !== "OPEN") return no("This job is closed.");
   if (!isClubMember(tailor)) return no("Join the tailor me Club to see job details.");
+  if (exclusiveTo(tailor, job)) return no("The customer sent this job to their own tailor.");
   const wait = headStartMessage(tailor, job, now);
   if (wait) return no(wait);
   return ok;

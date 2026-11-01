@@ -39,3 +39,10 @@ describe("bookingFeeCents (15%, $5 minimum, no cap)", () => {
   });
   it("rounds to the cent", () => expect(bookingFeeCents(4567)).toBe(685));
 });
+
+describe("repeat booking fee", () => {
+  it("is a flat $5 with a tailor you've booked before, whatever the quote", () => {
+    expect(bookingFeeCents(20000, true)).toBe(500);
+    expect(bookingFeeCents(1400, true)).toBe(500);
+  });
+});

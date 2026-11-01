@@ -71,3 +71,24 @@ describe("Club Plus head start", () => {
     expect(isPlus(tailor)).toBe(false);
   });
 });
+
+describe("head start only when a Plus member matches", () => {
+  const fresh = { ...job, createdAt: new Date() };
+  it("no Plus match: standard members see the job straight away", () =>
+    expect(canTailorSeeJob(tailor, { ...fresh, openToAllAt: fresh.createdAt }, null).ok).toBe(true));
+  it("Plus match: standard members wait until openToAllAt", () =>
+    expect(canTailorSeeJob(tailor, { ...fresh, openToAllAt: new Date(Date.now() + 15 * 60_000) }, null).ok).toBe(false));
+});
+
+describe("exclusive rebooks", () => {
+  const rebook = { ...job, exclusive: true, requestedTailorId: "t1" };
+  it("the customer's own tailor can see and quote", () => {
+    expect(canTailorSeeJob(tailor, rebook, null).ok).toBe(true);
+    expect(canQuote(tailor, rebook, 0, false).ok).toBe(true);
+  });
+  it("other tailors, even Plus, can't", () => {
+    expect(canTailorSeeJob(plus, rebook, null).ok).toBe(false);
+    expect(canQuote(plus, rebook, 0, false).ok).toBe(false);
+  });
+  it("once opened up, everyone can", () => expect(canQuote(plus, { ...rebook, exclusive: false }, 0, false).ok).toBe(true));
+});

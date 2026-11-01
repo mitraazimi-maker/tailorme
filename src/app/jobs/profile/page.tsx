@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { saveFitProfile } from "@/app/actions/customer";
 import { requireUser } from "@/lib/auth";
+import { bookedTailorIds } from "@/lib/bookings";
 import { db } from "@/lib/db";
 import { SUBURB_NAMES } from "@/lib/suburbs";
 
@@ -9,7 +10,10 @@ export const metadata = { title: "Fit profile" };
 export default async function FitProfile({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
   const user = await requireUser("/jobs/profile");
   const { saved } = await searchParams;
-  const mine = await db.myTailor.findMany({ where: { customerId: user.id }, include: { tailor: true }, orderBy: { createdAt: "desc" } });
+  const [mine, booked] = await Promise.all([
+    db.myTailor.findMany({ where: { customerId: user.id }, include: { tailor: true }, orderBy: { createdAt: "desc" } }),
+    bookedTailorIds(user.id),
+  ]);
   return (
     <div className="wrap page">
       <div className="tabs"><Link href="/jobs">My jobs</Link><Link href="/jobs/profile" aria-current="page">Fit profile &amp; my tailors</Link></div>
@@ -45,7 +49,14 @@ export default async function FitProfile({ searchParams }: { searchParams: Promi
               {mine.map((m) => (
                 <li key={m.tailorId}>
                   <Link className="link" href={`/tailors/${m.tailor.slug}`}><b>{m.tailor.businessName}</b></Link>
-                  <span>{m.tailor.suburb} · <Link className="link" href={`/post?tailor=${m.tailor.slug}`}>Request a quote</Link></span>
+                  <span>
+                    {m.tailor.suburb} ·{" "}
+                    {booked.has(m.tailorId) ? (
+                      <Link className="link" href={`/post?tailor=${m.tailor.slug}&rebook=1`}>Rebook · flat $5</Link>
+                    ) : (
+                      <Link className="link" href={`/post?tailor=${m.tailor.slug}`}>Request a quote</Link>
+                    )}
+                  </span>
                 </li>
               ))}
             </ul>

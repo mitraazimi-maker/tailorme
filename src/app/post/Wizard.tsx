@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Disclaimer } from "@/components/ui";
-import { ACKNOWLEDGEMENT, BOOKING_FEE_LABEL, FITTING, GARMENTS, INTRO, MAX_PHOTOS, TIMING, WORK, estimate } from "@/lib/catalog";
+import { ACKNOWLEDGEMENT, BOOKING_FEE_LABEL, FITTING, GARMENTS, INTRO, MAX_PHOTOS, REPEAT_FEE_LABEL, TIMING, WORK, estimate } from "@/lib/catalog";
+import { contactRefusal, findContactDetails } from "@/lib/contact-filter";
 import { SUBURB_NAMES, findSuburb } from "@/lib/suburbs";
 
 const STEPS = ["Garment", "The work", "Details", "Timing", "Your details", "Review"];
@@ -12,9 +13,11 @@ type Props = {
   user: { firstName: string; email: string } | null;
   defaultSuburb: string;
   tailor: { slug: string; name: string } | null;
+  /** Rebooking a tailor the customer has booked before: sent only to them, flat repeat fee. */
+  rebook: boolean;
 };
 
-export default function Wizard({ user, defaultSuburb, tailor }: Props) {
+export default function Wizard({ user, defaultSuburb, tailor, rebook }: Props) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [garment, setGarment] = useState<string | null>(null);
@@ -48,10 +51,18 @@ export default function Wizard({ user, defaultSuburb, tailor }: Props) {
     });
   }
 
+  const leak = findContactDetails(description);
   const checks: Record<number, [boolean, string]> = {
     0: [!!garment, "Pick a garment to continue."],
     1: [!!work, "Pick the work you need."],
-    2: [photos.length > 0 && description.trim().length >= 10, !photos.length ? "Add at least one photo of the garment. Tailors can’t quote without one." : "Describe the job in a sentence or two (fabric and measurement help)."],
+    2: [
+      photos.length > 0 && description.trim().length >= 10 && !leak,
+      !photos.length
+        ? "Add at least one photo of the garment. Tailors can’t quote without one."
+        : leak
+          ? contactRefusal("job description", leak)
+          : "Describe the job in a sentence or two (fabric and measurement help).",
+    ],
     3: [!!timing && !!findSuburb(suburb), !timing ? "Choose a timeframe." : "Choose your suburb from the list."],
     4: [!!user || (!!firstName.trim() && /^\S+@\S+\.\S+$/.test(email) && password.length >= 8), "Enter your first name, a valid email and a password of at least 8 characters."],
     5: [ack, "Tick the box to confirm you understand how quotes and bookings work."],
@@ -76,6 +87,7 @@ export default function Wizard({ user, defaultSuburb, tailor }: Props) {
     fd.set("suburb", suburb);
     fd.set("ack", "on");
     if (tailor) fd.set("tailor", tailor.slug);
+    if (rebook) fd.set("rebook", "1");
     if (!user) {
       fd.set("firstName", firstName);
       fd.set("email", email);
@@ -112,7 +124,8 @@ export default function Wizard({ user, defaultSuburb, tailor }: Props) {
         <div className="lbl"><span>{STEPS[step]}</span><span className="num">{step + 1} / {STEPS.length}</span></div>
         <div className="wtape"><div className="fill" style={{ width: `${pct}%` }} /></div>
       </div>
-      {tailor && <p className="notice" style={{ marginBottom: 18 }}>Requesting a quote from <b>{tailor.name}</b>. Other matching tailors nearby can quote too.</p>}
+      {tailor && rebook && <p className="notice ok" style={{ marginBottom: 18 }}>Rebooking <b>{tailor.name}</b>. Only they’ll see this job, and the booking fee is a flat $5. You can open it to other tailors later.</p>}
+      {tailor && !rebook && <p className="notice" style={{ marginBottom: 18 }}>Requesting a quote from <b>{tailor.name}</b>. Other matching tailors nearby can quote too.</p>}
 
       {step === 0 && (
         <>
@@ -236,7 +249,7 @@ export default function Wizard({ user, defaultSuburb, tailor }: Props) {
             {photos.map((p, i) => <img key={p.url} src={p.url} alt={`Garment photo ${i + 1}`} />)}
           </div>
           <div className="est">Guide price for this job in Sydney: <b style={{ marginLeft: "auto" }}>${lo} – ${hi}</b></div>
-          <div className="est" style={{ marginTop: 8 }}>tailor me booking fee, charged only when you accept a quote: <b style={{ marginLeft: "auto", textAlign: "right" }}>{BOOKING_FEE_LABEL}</b></div>
+          <div className="est" style={{ marginTop: 8 }}>tailor me booking fee, charged only when you accept a quote: <b style={{ marginLeft: "auto", textAlign: "right" }}>{rebook ? REPEAT_FEE_LABEL : BOOKING_FEE_LABEL}</b></div>
           <div style={{ marginTop: 12 }}><Disclaimer /></div>
           <p className="intro-note">{INTRO}</p>
           <label className="ack" htmlFor="wAck">

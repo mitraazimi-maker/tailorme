@@ -4,7 +4,9 @@ import { z } from "zod";
 import { getUser, hashPassword, roleForNewUser, startSession } from "@/lib/auth";
 import { FITTING, GARMENTS, MAX_PHOTOS, TIMING, WORK, categoryFor } from "@/lib/catalog";
 import { db } from "@/lib/db";
-import { alertHeadStart } from "@/lib/alerts";
+import { alertOnPost } from "@/lib/alerts";
+import { bookedTailorIds } from "@/lib/bookings";
+import { contactRefusal, findContactDetails } from "@/lib/contact-filter";
 import { MAX_PHOTO_BYTES, savePhoto, sniffImage } from "@/lib/storage";
 import { findSuburb } from "@/lib/suburbs";
 
@@ -19,6 +21,7 @@ const JobIn = z.object({
   suburb: z.string().trim().min(1, "Enter your suburb."),
   ack: z.literal("on", { errorMap: () => ({ message: "Tick the box to confirm you understand how quotes and bookings work." }) }),
   tailor: z.string().optional(),
+  rebook: z.literal("1").optional(),
 });
 
 const NewCustomer = z.object({
@@ -35,6 +38,8 @@ export async function POST(req: Request) {
   const parsed = JobIn.safeParse(fields);
   if (!parsed.success) return bad(parsed.error.issues[0].message);
   const d = parsed.data;
+  const leak = findContactDetails(d.description);
+  if (leak) return bad(contactRefusal("job description", leak));
   const suburb = findSuburb(d.suburb);
   if (!suburb) return bad("Choose a Sydney suburb from the list.");
 
@@ -74,6 +79,8 @@ export async function POST(req: Request) {
   }
 
   const requested = d.tailor ? await db.tailorProfile.findUnique({ where: { slug: d.tailor }, select: { id: true } }) : null;
+  // A rebook goes only to the customer's own tailor, and only if they've booked them through tailor me before.
+  const exclusive = !!(d.rebook && requested && (await bookedTailorIds(user.id)).has(requested.id));
   const keys = await Promise.all(photos.map((p) => savePhoto(p.buf, p.mime)));
 
   let job;
@@ -92,6 +99,7 @@ export async function POST(req: Request) {
           suburb,
           acknowledgedAt: new Date(),
           requestedTailorId: requested?.id ?? null,
+          exclusive,
           photos: { create: keys.map((storageKey, i) => ({ storageKey, mime: photos[i].mime, bytes: photos[i].buf.length })) },
         },
       });
@@ -103,7 +111,7 @@ export async function POST(req: Request) {
     }
   }
 
-  await alertHeadStart(job);
+  await alertOnPost(job);
 
   return NextResponse.json({ id: job.id, ref: job.ref });
 }

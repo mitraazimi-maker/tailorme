@@ -21,7 +21,7 @@ export default async function JobFeed({ searchParams }: { searchParams: Promise<
     where: {
       status: "OPEN",
       customerId: { not: tailor.userId },
-      OR: [{ category: { in: cats } }, { requestedTailorId: tailor.id }],
+      OR: [{ category: { in: cats }, exclusive: false }, { requestedTailorId: tailor.id }],
     },
     include: {
       photos: { take: 1 },
@@ -75,7 +75,7 @@ export default async function JobFeed({ searchParams }: { searchParams: Promise<
                   <h3>{j.work} · {j.garment}</h3>
                   <div className="small muted">
                     {catName(j.category)} · {j.quotes.length}/{MAX_QUOTES_PER_JOB} quotes
-                    {j.requestedTailorId === tailor.id && " · asked for you"}
+                    {j.requestedTailorId === tailor.id && (j.exclusive ? " · rebook from your customer" : " · asked for you")}
                   </div>
                 </div>
                 {quoted ? <Status s="PENDING" label="quoted" /> : <span className="btn btn-ink btn-sm">Quote</span>}

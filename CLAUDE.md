@@ -15,6 +15,7 @@ A Sydney marketplace that connects people with local tailors and seamstresses fo
 - **Tailors:** $10/month membership, called **the tailor me Club**. No lead fees. No commission. Unlimited quotes.
 - **Club Plus** (decided 20 Oct 2026): **$29/month**. Featured first in search (always labelled "Featured" and disclosed as paid placement), a **15-minute head start** on new matching jobs, and a portfolio gallery (up to 12 photos).
 - **Customers:** posting a job is free. A **booking fee of 15% of the accepted guide quote, minimum $5, no cap** (changed 20 Oct 2026 from a flat $5), per job, charged only when the customer **accepts a quote**. Always show the exact fee before they pay.
+- **Repeat bookings** (decided 1 Nov 2026): rebooking a tailor the customer has already booked through tailor me costs a **flat $5**, and the job goes only to that tailor (they can open it to others). This is the main defence against customers going direct.
 - Customers pay the tailor **directly** for the work. Payment for the work does not run through the platform.
 - **Introductions only.** tailor me is not a party to the agreement between customer and tailor and is not responsible for disputes, damaged garments or the work itself. Tailors are independent businesses.
 - Tailors **will not** be required to hold public liability insurance. Tailors want simplicity.
@@ -73,25 +74,27 @@ Where the hard rules live in code. Keep them there, not scattered:
 - Reviews: created only through `leaveReview` against a paid booking. There is no update path for reviews anywhere, including admin. Keep it that way.
 - Only Club members (`clubStatus = ACTIVE`) are listed publicly, get job alerts, see job photos and can quote. Max three quotes per job.
 - Booking fee: `bookingFeeCents()` in `src/lib/catalog.ts` (unit tested). The fee is fixed on the booking when the quote is accepted.
-- Club Plus: `isPlus()` and the head start (`visibleFrom`) live in `src/lib/rules.ts`. Plus members are alerted on posting; standard Club members by `/api/cron/notify` after 15 minutes. "Featured" only reorders the default "Best match" sort; an explicit sort the customer picks is respected. Never show Featured without the label.
+- Club Plus: `isPlus()` and the head start (`visibleFrom`) live in `src/lib/rules.ts`. The head start only applies when a Plus member actually matches the job (`Job.openToAllAt`, set in `src/lib/alerts.ts`); otherwise everyone sees it at once. Plus members are alerted on posting; standard Club members by `/api/cron/notify` once `openToAllAt` passes. "Featured" only reorders the default "Best match" sort; an explicit sort the customer picks is respected. Never show Featured without the label.
+- No contact details before a booking is paid: `src/lib/contact-filter.ts` (unit tested) blocks phone numbers, emails, websites and social handles in job descriptions, quote messages, profile name/intro/hours, prices and portfolio captions. Apply it to any new field shown before booking.
+- Rebook: `/post?tailor=<slug>&rebook=1`. Only counts if the customer has a paid booking with that tailor (`bookedTailorIds` in `src/lib/bookings.ts`, checked server-side). Exclusive jobs are hidden from other tailors in `rules.ts` and the feed query.
 - Sample data (`isSample`) is dev-only; the seed refuses to run in production, and a banner shows while any exists.
 
 Payments: `PAYMENTS_MODE=simulate` gives a fake checkout page and only works when `APP_URL` is localhost. Production uses Stripe Checkout for the booking fee and Stripe Billing for Club and Club Plus (tier comes from the subscription price), synced by `/api/stripe/webhook`. Booking confirmation is idempotent (`src/lib/bookings.ts`).
 
-Not built yet: real email (`src/lib/notify.ts` only logs), cloud photo storage (`src/lib/storage.ts` writes to disk), in-app messaging, tailor portfolio photos, password reset, suburb SEO pages.
+Not built yet: real email (`src/lib/notify.ts` only logs), cloud photo storage (`src/lib/storage.ts` writes to disk), in-app messaging, password reset, suburb SEO pages.
 
 ## Next steps (not yet done)
 
 1. ~~Turn the prototype into a real app~~ Done (v1, see "The app"). Remaining before launch: email provider, S3/R2 photo storage, password reset, Stripe live keys and webhook, ABN Lookup GUID.
 2. Consider reusing the Spotfinder codebase (marketplace with Stripe and commission logic already built).
 3. Suburb SEO landing pages ("Trouser hems in Marrickville from $15"). This is the main growth channel.
-4. Plain-English terms of use for customers and tailors (introductions only, no liability for work). Get legal review.
+4. Plain-English terms of use for customers and tailors (introductions only, no liability for work). Get legal review. Include the non-circumvention section drafted in `docs/club-terms-non-circumvention-draft.md`.
 5. One-page agreement with Soraya Tailoring: what it sends, what it gets, who owns the customer, how it's listed, exit terms. Confirm Rabie is comfortable with Soraya's subcontractors listing on tailor me.
 6. Pilot: 10–15 tailors in 3–4 suburbs, jobs routed by hand, then build.
 
 ## Known risks
 
 - Low revenue ceiling ($10–29/month + 15%/min $5 per booking) means volume is everything. Go dense in a few suburbs first.
-- Repeat customers may go direct to the tailor to skip the booking fee. The percentage fee makes this more likely on big jobs.
+- Repeat customers may go direct to the tailor to skip the booking fee. Defences: flat $5 rebook, exclusive rebooks, contact details blocked before booking, "Booked N times through tailor me" on profiles, and a draft Club terms clause (`docs/club-terms-non-circumvention-draft.md`, needs legal review). None of it stops a determined customer; it removes the reasons to bother.
 - The brand promises an experience the tailors must deliver. Keep the luxury in what tailor me controls: booking, messages, fit profile, the four standards.
 - Competitors: Google Maps "alterations near me", Airtasker (lists tailoring in Sydney).

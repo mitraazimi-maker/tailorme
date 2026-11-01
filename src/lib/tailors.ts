@@ -108,8 +108,11 @@ export async function getTailorBySlug(slug: string, near: string | null) {
   });
   if (!t) return null;
   const [card] = await decorate([t], near);
-  const agg = await db.review.aggregate({ where: { tailorId: t.id }, _avg: { fitFinish: true, onTime: true, quoteAccuracy: true } });
-  return { profile: t, card, sub: agg._avg };
+  const [agg, bookings] = await Promise.all([
+    db.review.aggregate({ where: { tailorId: t.id }, _avg: { fitFinish: true, onTime: true, quoteAccuracy: true } }),
+    db.booking.count({ where: { tailorId: t.id, paidAt: { not: null }, status: { in: ["CONFIRMED", "COMPLETED"] } } }),
+  ]);
+  return { profile: t, card, sub: agg._avg, bookings };
 }
 
 export async function slugFor(name: string) {

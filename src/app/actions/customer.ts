@@ -2,7 +2,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { alertOnPost } from "@/lib/alerts";
 import { requireUser } from "@/lib/auth";
+import { bookedTailorIds } from "@/lib/bookings";
 import { bookingFeeCents } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { bookingCheckoutUrl } from "@/lib/payments";
@@ -31,7 +33,7 @@ export async function acceptQuote(form: FormData) {
   // A job has at most one booking. An unpaid one from an abandoned checkout is reused.
   const existing = await db.booking.findUnique({ where: { jobId: quote.jobId } });
   if (existing && existing.status !== "PENDING_PAYMENT") redirect(`/jobs/${quote.jobId}`);
-  const data = { quoteId: quote.id, tailorId: quote.tailorId, customerId: user.id, feeCents: bookingFeeCents(quote.priceCents) };
+  const data = { quoteId: quote.id, tailorId: quote.tailorId, customerId: user.id, feeCents: bookingFeeCents(quote.priceCents, (await bookedTailorIds(user.id, quote.jobId)).has(quote.tailorId)) };
   const booking = existing
     ? await db.booking.update({ where: { id: existing.id }, data: { ...data, stripeCheckoutSessionId: null } })
     : await db.booking.create({ data: { ...data, jobId: quote.jobId } });
@@ -89,4 +91,13 @@ export async function saveFitProfile(form: FormData) {
   const suburb = findSuburb(String(form.get("suburb") ?? "")) ?? user.suburb;
   await db.user.update({ where: { id: user.id }, data: { fitNotes, phone, suburb } });
   redirect("/jobs/profile?saved=1");
+}
+
+/** Opens an exclusive rebook up to other tailors (with the usual Plus head start). */
+export async function openJobToAll(form: FormData) {
+  const user = await requireUser();
+  const jobId = String(form.get("jobId"));
+  const updated = await db.job.updateMany({ where: { id: jobId, customerId: user.id, status: "OPEN", exclusive: true }, data: { exclusive: false, clubNotifiedAt: null } });
+  if (updated.count) await alertOnPost(await db.job.findUniqueOrThrow({ where: { id: jobId } }), new Date());
+  redirect(`/jobs/${jobId}?opened=1`);
 }

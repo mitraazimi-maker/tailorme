@@ -1,6 +1,6 @@
 # tailor me
 
-Sydney marketplace for everyday alterations and repairs. Customers post a job with photos, up to three local tailors send guide quotes, and the customer books one for a fee of 15% of the quote (minimum $5). Tailors pay $10/month for the tailor me Club, or $29/month for Club Plus (featured in search, 15-minute head start on new jobs, portfolio).
+Sydney marketplace for everyday alterations and repairs. Customers post a job with photos, up to three local tailors send guide quotes, and the customer books one for a fee of 15% of the quote (minimum $5), or a flat $5 when rebooking a tailor they've booked before. Tailors pay $10/month for the tailor me Club, or $29/month for Club Plus (featured in search, 15-minute head start on new jobs, portfolio).
 
 Read `CLAUDE.md` first. It holds the product rules (disclaimers, "ABN checked", reviews only from bookings) that the code enforces.
 

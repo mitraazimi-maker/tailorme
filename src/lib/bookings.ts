@@ -40,3 +40,13 @@ export function clubStatusFromStripe(status: string): ClubStatus {
       return "CANCELED";
   }
 }
+
+/** Tailors this customer has a paid booking with: rebooking them costs the flat repeat fee. */
+export async function bookedTailorIds(customerId: string, exceptJobId?: string) {
+  const rows = await db.booking.findMany({
+    where: { customerId, paidAt: { not: null }, status: { in: ["CONFIRMED", "COMPLETED"] }, ...(exceptJobId && { jobId: { not: exceptJobId } }) },
+    select: { tailorId: true },
+    distinct: ["tailorId"],
+  });
+  return new Set(rows.map((r) => r.tailorId));
+}

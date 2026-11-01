@@ -167,8 +167,13 @@ model Job {
   status            JobStatus  @default(OPEN)
   requestedTailorId String?
   acknowledgedAt    DateTime
-  // Standard Club members are alerted after the Plus head start (see /api/cron/notify).
+  // When standard Club members can see the job: 15 minutes after posting if a
+  // Club Plus member matches it, otherwise straight away. Null on older jobs.
+  openToAllAt       DateTime?
+  // Standard Club members are alerted once openToAllAt passes (see /api/cron/notify).
   clubNotifiedAt    DateTime?
+  // A rebook sent only to the customer's own tailor until they open it up.
+  exclusive         Boolean    @default(false)
   isSample          Boolean    @default(false)
   createdAt         DateTime   @default(now())
 

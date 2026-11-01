@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Disclaimer, IntroNote, Stars, Status } from "@/components/ui";
-import { acceptQuote, cancelJob, leaveReview } from "@/app/actions/customer";
+import { acceptQuote, cancelJob, leaveReview, openJobToAll } from "@/app/actions/customer";
+import { bookedTailorIds } from "@/lib/bookings";
 import { requireUser } from "@/lib/auth";
 import { BOOKING_FEE_LABEL, bookingFeeCents, estimate } from "@/lib/catalog";
 import { db } from "@/lib/db";
@@ -11,7 +12,7 @@ import { patternFor } from "@/lib/tailors";
 
 export const metadata = { title: "Job" };
 
-type SP = { posted?: string; booked?: string; cancelled?: string; reviewed?: string; error?: string };
+type SP = { posted?: string; booked?: string; cancelled?: string; reviewed?: string; opened?: string; error?: string };
 
 export default async function JobPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<SP> }) {
   const { id } = await params;
@@ -28,6 +29,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
   });
   if (!job || job.customerId !== user.id) notFound();
 
+  const repeatTailors = await bookedTailorIds(user.id, job.id);
   const ratings = await db.review.groupBy({ by: ["tailorId"], where: { tailorId: { in: job.quotes.map((q) => q.tailorId) } }, _avg: { rating: true }, _count: true });
   const rating = (tid: string) => ratings.find((r) => r.tailorId === tid);
   const booking = job.booking;
@@ -42,6 +44,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
       {sp.booked && !shared && <p className="notice" style={{ marginBottom: 16 }}>Payment received. Confirming your booking… refresh in a moment.</p>}
       {sp.cancelled && <p className="notice" style={{ marginBottom: 16 }}>Payment cancelled. Nothing was charged. You can book any quote below.</p>}
       {sp.reviewed && <p className="notice ok" style={{ marginBottom: 16 }}>Thanks for your review.</p>}
+      {sp.opened && <p className="notice ok" style={{ marginBottom: 16 }}>Your job is now open to other tailors nearby.</p>}
       {sp.error && <p className="notice bad" role="alert" style={{ marginBottom: 16 }}>{sp.error}</p>}
 
       <div className="page-head">
@@ -69,6 +72,10 @@ export default async function JobPage({ params, searchParams }: { params: Promis
               <p className="small muted" style={{ marginTop: 14 }}>Contact the tailor to arrange drop-off or a fitting. You pay the tailor directly for the work.</p>
               <div style={{ marginTop: 12 }}><Disclaimer /></div>
               <IntroNote />
+              <div className="mytailor" style={{ marginTop: 14, justifyContent: "space-between", flexWrap: "wrap" }}>
+                <span>Next time, rebook {booking.tailor.businessName} here. It’s a flat $5, they get your fit notes, and you keep your booking history and reviews.</span>
+                <Link className="btn btn-ink btn-sm" href={`/post?tailor=${booking.tailor.slug}&rebook=1`}>Rebook</Link>
+              </div>
             </div>
           )}
 
@@ -103,6 +110,14 @@ export default async function JobPage({ params, searchParams }: { params: Promis
               <h2>Quotes</h2>
               {job.status === "CANCELLED" ? (
                 <p className="muted">You cancelled this job.</p>
+              ) : job.exclusive && job.status === "OPEN" && job.quotes.length === 0 ? (
+                <div className="stack">
+                  <p className="muted">Sent only to {job.requestedTailor?.businessName ?? "your tailor"}. They’ll reply with a guide price and ready date.</p>
+                  <form action={openJobToAll}>
+                    <input type="hidden" name="jobId" value={job.id} />
+                    <button className="btn btn-ghost btn-sm">Open to other tailors nearby</button>
+                  </form>
+                </div>
               ) : job.quotes.length === 0 ? (
                 <p className="muted"><span className="pulse" style={{ display: "inline-block", marginRight: 8 }} />Waiting for tailors. Most jobs get a quote within the hour during opening hours.</p>
               ) : (
@@ -120,17 +135,20 @@ export default async function JobPage({ params, searchParams }: { params: Promis
                         {q.message && <p className="msg">“{q.message}”</p>}
                         <div className="acts">
                           {job.status === "OPEN" && q.status === "PENDING" ? (
-                            <form action={acceptQuote}>
-                              <input type="hidden" name="quoteId" value={q.id} />
-                              <button className="btn btn-primary btn-sm">Book · {money(bookingFeeCents(q.priceCents))} booking fee</button>
-                            </form>
+                            <>
+                              <form action={acceptQuote}>
+                                <input type="hidden" name="quoteId" value={q.id} />
+                                <button className="btn btn-primary btn-sm">Book · {money(bookingFeeCents(q.priceCents, repeatTailors.has(q.tailorId)))} booking fee</button>
+                              </form>
+                              {repeatTailors.has(q.tailorId) && <span className="small muted">Flat $5 because you’ve booked them before</span>}
+                            </>
                           ) : <Status s={q.status} />}
                         </div>
                       </div>
                     );
                   })}
                   <div style={{ marginTop: 14 }}><Disclaimer /></div>
-                  <p className="small muted" style={{ marginTop: 10 }}>The booking fee is {BOOKING_FEE_LABEL} and goes to tailor me. You pay the tailor directly for the work, once they’ve inspected the garment and confirmed the price.</p>
+                  <p className="small muted" style={{ marginTop: 10 }}>The booking fee is {BOOKING_FEE_LABEL}, or a flat $5 with a tailor you’ve booked through tailor me before. It goes to tailor me. You pay the tailor directly for the work, once they’ve inspected the garment and confirmed the price.</p>
                 </div>
               )}
             </div>

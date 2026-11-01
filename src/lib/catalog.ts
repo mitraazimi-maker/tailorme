@@ -13,7 +13,11 @@ export const ACKNOWLEDGEMENT =
 export const BOOKING_FEE_RATE = 0.15;
 export const BOOKING_FEE_MIN_CENTS = 500;
 export const BOOKING_FEE_LABEL = "15% of the quote you accept (minimum $5)";
-export const bookingFeeCents = (quoteCents: number) => Math.max(BOOKING_FEE_MIN_CENTS, Math.round(quoteCents * BOOKING_FEE_RATE));
+/** Rebooking a tailor you've already booked through tailor me: a flat fee, so there's no reason to go around us. */
+export const REPEAT_BOOKING_FEE_CENTS = 500;
+export const REPEAT_FEE_LABEL = "$5, because you’ve booked them through tailor me before";
+export const bookingFeeCents = (quoteCents: number, repeat = false) =>
+  repeat ? REPEAT_BOOKING_FEE_CENTS : Math.max(BOOKING_FEE_MIN_CENTS, Math.round(quoteCents * BOOKING_FEE_RATE));
 
 export const CLUB_PRICE_LABEL = "$10/month";
 export const PLUS_PRICE_LABEL = "$29/month";

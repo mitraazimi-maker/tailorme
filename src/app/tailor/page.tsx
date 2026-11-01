@@ -43,6 +43,13 @@ export default async function TailorHome({ searchParams }: { searchParams: Promi
 
       <div className="detail-grid">
         <div className="stack">
+          {member && (
+            <div className="notice">
+              <b style={{ color: "var(--ink)" }}>Keep your regulars booking through tailor me.</b> When a past customer rebooks you here it costs
+              them a flat $5, the job comes only to you, and every booking adds to your reviews and your “Booked through tailor me” count.
+              Point them to <Link className="link" href={`/tailors/${tailor.slug}`}>your profile</Link> and the Rebook button.
+            </div>
+          )}
           {todo.length > 0 && (
             <div className="panel">
               <h2>Finish your profile</h2>

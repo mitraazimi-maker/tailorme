@@ -10,6 +10,7 @@ import { notify } from "@/lib/notify";
 import { billingPortalUrl, changeClubTier, clubCheckoutUrl, paymentsMode } from "@/lib/payments";
 import { canQuote, isPlus } from "@/lib/rules";
 import { MAX_PHOTO_BYTES, savePhoto, sniffImage } from "@/lib/storage";
+import { contactRefusal, findContactDetails } from "@/lib/contact-filter";
 import { findSuburb } from "@/lib/suburbs";
 
 const back = (path: string, error: string): never => redirect(`${path}?error=${encodeURIComponent(error)}`);
@@ -31,6 +32,11 @@ export async function saveProfile(form: FormData) {
   const parsed = ProfileIn.safeParse(Object.fromEntries(form));
   if (!parsed.success) back("/tailor/profile", parsed.error.issues[0].message);
   const d = parsed.data!;
+  // These show on the public profile, so no contact details (the shop address and phone only show after booking).
+  for (const [field, label] of [["businessName", "business name"], ["bio", "intro"], ["openingHours", "opening hours"]] as const) {
+    const found = findContactDetails(d[field]);
+    if (found) back("/tailor/profile", contactRefusal(label, found));
+  }
   const suburb = findSuburb(d.suburb);
   if (!suburb) back("/tailor/profile", "Choose a Sydney suburb from the list.");
   const categories = form.getAll("categories").map(String).filter(isCategory);
@@ -79,6 +85,10 @@ export async function saveServices(form: FormData) {
   const rows = names
     .map((_, i) => ServiceRow.parse({ name: names[i], note: notes[i] ?? "", price: prices[i] ?? "" }))
     .filter((r) => r.name);
+  for (const r of rows) {
+    const found = findContactDetails(`${r.name} ${r.note}`);
+    if (found) back("/tailor/profile", contactRefusal("prices list", found));
+  }
   const data = rows.map((r, i) => {
     const n = Number(r.price.replace(/^\$/, ""));
     const fixed = r.price !== "" && Number.isFinite(n) && n >= 0;
@@ -102,6 +112,8 @@ export async function submitQuote(form: FormData) {
   const parsed = QuoteIn.safeParse(Object.fromEntries(form));
   if (!parsed.success) back(path, parsed.error.issues[0].message);
   const d = parsed.data!;
+  const leak = findContactDetails(d.message);
+  if (leak) back(path, contactRefusal("quote message", leak));
   const readyBy = new Date(`${d.readyBy}T17:00:00+10:00`);
   if (readyBy.getTime() < Date.now() - 864e5) back(path, "The ready date can’t be in the past.");
 
@@ -178,6 +190,8 @@ export async function addPortfolioPhotos(form: FormData) {
   if (!files.length) back("/tailor/profile", "Choose at least one photo.");
   if (existing + files.length > MAX_PORTFOLIO_PHOTOS) back("/tailor/profile", `Up to ${MAX_PORTFOLIO_PHOTOS} portfolio photos.`);
   const caption = String(form.get("caption") ?? "").trim().slice(0, 120) || null;
+  const leak = findContactDetails(caption);
+  if (leak) back("/tailor/profile", contactRefusal("caption", leak));
   for (const f of files) {
     if (f.size > MAX_PHOTO_BYTES) back("/tailor/profile", "Each photo must be under 10 MB.");
     const buf = new Uint8Array(await f.arrayBuffer());
