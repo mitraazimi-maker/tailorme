@@ -6,7 +6,7 @@ import { bookedTailorIds, spendablePoints } from "@/lib/bookings";
 import { pickupPriceLabel } from "@/lib/pickup";
 import { pointsEarned, voucherFor } from "@/lib/rewards";
 import { requireUser } from "@/lib/auth";
-import { BOOKING_FEE_LABEL, bookingFeeCents, estimate } from "@/lib/catalog";
+import { BOOKING_FEE_LABEL, estimate, quoteBookingFeeCents } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { fabric, money } from "@/lib/fabric";
 import { canReview, contactShared } from "@/lib/rules";
@@ -33,7 +33,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
 
   const [repeatTailors, spendable] = await Promise.all([bookedTailorIds(user.id, job.id), spendablePoints(user.id, job.booking?.id)]);
   const feeFor = (q: { priceCents: number; tailorId: string }) => {
-    const fee = bookingFeeCents(q.priceCents, repeatTailors.has(q.tailorId));
+    const fee = quoteBookingFeeCents(q, repeatTailors.has(q.tailorId));
     const voucher = voucherFor(spendable, fee);
     return { fee, voucher, pay: fee - voucher };
   };

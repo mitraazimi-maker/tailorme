@@ -7,7 +7,7 @@ import { requireUser } from "@/lib/auth";
 import { notify } from "@/lib/notify";
 import { bookedTailorIds, confirmBooking, spendablePoints } from "@/lib/bookings";
 import { voucherFor } from "@/lib/rewards";
-import { bookingFeeCents } from "@/lib/catalog";
+import { quoteBookingFeeCents } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { bookingCheckoutUrl } from "@/lib/payments";
 import { canAcceptQuote, canReview } from "@/lib/rules";
@@ -36,7 +36,7 @@ export async function acceptQuote(form: FormData) {
   const existing = await db.booking.findUnique({ where: { jobId: quote.jobId } });
   if (existing && existing.status !== "PENDING_PAYMENT") redirect(`/jobs/${quote.jobId}`);
   const isRepeat = (await bookedTailorIds(user.id, quote.jobId)).has(quote.tailorId);
-  const feeCents = bookingFeeCents(quote.priceCents, isRepeat);
+  const feeCents = quoteBookingFeeCents(quote, isRepeat);
   // A rewards voucher comes off automatically when the customer has enough points.
   const voucherCents = voucherFor(await spendablePoints(user.id, existing?.id), feeCents);
   const data = { quoteId: quote.id, tailorId: quote.tailorId, customerId: user.id, feeCents, voucherCents, isRepeat };

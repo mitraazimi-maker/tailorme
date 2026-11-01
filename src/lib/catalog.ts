@@ -12,10 +12,17 @@ export const ACKNOWLEDGEMENT =
 // Customer booking fee: 15% of the accepted guide quote, never less than $5.
 export const BOOKING_FEE_RATE = 0.15;
 export const BOOKING_FEE_MIN_CENTS = 500;
-export const BOOKING_FEE_LABEL = "15% of the quote you accept (minimum $5)";
+export const BOOKING_FEE_LABEL = "15% of the quote you accept, including any pickup (minimum $5)";
 /** Rebooking a tailor you've already booked through tailor me: a flat fee, so there's no reason to go around us. */
 export const REPEAT_BOOKING_FEE_CENTS = 500;
 export const REPEAT_FEE_LABEL = "$5, because you’ve booked them through tailor me before";
+/**
+ * The booking fee for a quote: 15% of the work plus any pickup the tailor quoted (min $5),
+ * or the flat repeat fee for a rebook. The pickup price itself is still paid to the tailor.
+ */
+export const quoteBookingFeeCents = (q: { priceCents: number; pickupFeeCents?: number | null }, repeat = false) =>
+  bookingFeeCents(q.priceCents + (q.pickupFeeCents ?? 0), repeat);
+
 export const bookingFeeCents = (quoteCents: number, repeat = false) =>
   repeat ? REPEAT_BOOKING_FEE_CENTS : Math.max(BOOKING_FEE_MIN_CENTS, Math.round(quoteCents * BOOKING_FEE_RATE));
 

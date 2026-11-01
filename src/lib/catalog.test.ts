@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DISCLAIMER, INTRO, bookingFeeCents, categoryFor, estimate } from "./catalog";
+import { DISCLAIMER, INTRO, bookingFeeCents, categoryFor, estimate, quoteBookingFeeCents } from "./catalog";
 
 describe("copy that must stay verbatim (CLAUDE.md rules 2 and 4)", () => {
   it("disclaimer", () =>
@@ -45,4 +45,11 @@ describe("repeat booking fee", () => {
     expect(bookingFeeCents(20000, true)).toBe(500);
     expect(bookingFeeCents(1400, true)).toBe(500);
   });
+});
+
+describe("booking fee includes quoted pickup", () => {
+  it("15% of work + pickup", () => expect(quoteBookingFeeCents({ priceCents: 3000, pickupFeeCents: 1500 })).toBe(675));
+  it("still $5 minimum", () => expect(quoteBookingFeeCents({ priceCents: 1500, pickupFeeCents: 1000 })).toBe(500));
+  it("no pickup: unchanged", () => expect(quoteBookingFeeCents({ priceCents: 6000, pickupFeeCents: null })).toBe(900));
+  it("rebooks stay a flat $5 with pickup", () => expect(quoteBookingFeeCents({ priceCents: 20000, pickupFeeCents: 2000 }, true)).toBe(500));
 });
