@@ -5,11 +5,11 @@ import { patternFor, type TailorCard } from "./tailor-display";
 
 export { patternFor, replyLabel, type TailorCard } from "./tailor-display";
 import { db } from "./db";
-import { isPlus } from "./rules";
+import { activeMemberWhere, isPlus } from "./rules";
 import { distanceKm } from "./suburbs";
 
 /** Only Club members are listed publicly. */
-const listed: Prisma.TailorProfileWhereInput = { clubStatus: "ACTIVE" };
+const listed = (): Prisma.TailorProfileWhereInput => activeMemberWhere();
 
 async function decorate(rows: Prisma.TailorProfileGetPayload<{ include: { services: true } }>[], near: string | null): Promise<TailorCard[]> {
   const ids = rows.map((r) => r.id);
@@ -68,7 +68,7 @@ export type Search = {
 export async function searchTailors(s: Search): Promise<TailorCard[]> {
   const rows = await db.tailorProfile.findMany({
     where: {
-      ...listed,
+      ...listed(),
       ...(s.cats?.length ? { categories: { hasSome: s.cats } } : {}),
       ...(s.mobile ? { comesToCustomer: true } : {}),
       ...(s.express ? { sameDay: true } : {}),

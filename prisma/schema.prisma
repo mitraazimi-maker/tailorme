@@ -33,6 +33,13 @@ enum ClubTier {
   PLUS
 }
 
+enum ReportStatus {
+  OPEN
+  DISMISSED
+  WARNED
+  SUSPENDED
+}
+
 enum JobStatus {
   OPEN
   BOOKED
@@ -73,6 +80,8 @@ model User {
   bookings   Booking[]       @relation("CustomerBookings")
   reviews    Review[]
   myTailors  MyTailor[]
+  points     PointsEntry[]
+  reports    ConductReport[]
 }
 
 model Session {
@@ -112,6 +121,11 @@ model TailorProfile {
   stripeSubscriptionId String?    @unique
   clubRenewsAt         DateTime?
 
+  // Set by an admin on an upheld report of arranging work outside tailor me.
+  // While in the future the tailor is treated as not a Club member.
+  suspendedUntil   DateTime?
+  suspensionReason String?
+
   isSample  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -124,6 +138,7 @@ model TailorProfile {
   fans     MyTailor[]
   requests Job[]      @relation("RequestedTailor")
   portfolio PortfolioPhoto[]
+  reports   ConductReport[]
 }
 
 // Club Plus portfolio. Public on the tailor's profile while they're on Plus.
@@ -223,6 +238,10 @@ model Booking {
   customerId              String
   tailorId                String
   feeCents                Int
+  // Rewards voucher taken off the fee; the customer pays feeCents - voucherCents.
+  voucherCents            Int           @default(0)
+  // Rebooking a tailor the customer had booked before (flat fee, double points).
+  isRepeat                Boolean       @default(false)
   status                  BookingStatus @default(PENDING_PAYMENT)
   stripeCheckoutSessionId String?       @unique
   paidAt                  DateTime?
@@ -234,6 +253,42 @@ model Booking {
   customer User          @relation("CustomerBookings", fields: [customerId], references: [id], onDelete: Cascade)
   tailor   TailorProfile @relation(fields: [tailorId], references: [id], onDelete: Cascade)
   review   Review?
+  reports  ConductReport[]
+}
+
+// Customer rewards: points earned on paid bookings, spent on booking-fee vouchers.
+// Balance is the sum. (bookingId, reason) is unique so webhook retries can't double up.
+model PointsEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  points    Int
+  reason    String // "booking" | "rebook" | "voucher"
+  bookingId String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, reason])
+  @@index([userId])
+}
+
+// A customer's report that a tailor arranged (or asked to arrange) work outside tailor me.
+// Only customers with a paid booking with that tailor can report. An admin decides.
+model ConductReport {
+  id         String        @id @default(cuid())
+  tailorId   String
+  customerId String
+  bookingId  String?
+  details    String
+  status     ReportStatus  @default(OPEN)
+  adminNote  String?
+  createdAt  DateTime      @default(now())
+  resolvedAt DateTime?
+  tailor     TailorProfile @relation(fields: [tailorId], references: [id], onDelete: Cascade)
+  customer   User          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  booking    Booking?      @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([tailorId])
 }
 
 // Reviews can only exist against a paid booking (rule 6). There is deliberately

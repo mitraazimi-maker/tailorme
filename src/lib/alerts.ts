@@ -3,7 +3,7 @@ import type { Job } from "@prisma/client";
 import { HEAD_START_MINUTES } from "./catalog";
 import { db } from "./db";
 import { notify } from "./notify";
-import { headStartEnds, isPlus } from "./rules";
+import { activeMemberWhere, headStartEnds, isPlus } from "./rules";
 import { distanceKm } from "./suburbs";
 
 /** Radius within which tailors are told about a new job. */
@@ -11,7 +11,7 @@ const ALERT_KM = 15;
 
 async function matchingTailors(job: Job) {
   const tailors = await db.tailorProfile.findMany({
-    where: { clubStatus: "ACTIVE", OR: [{ categories: { has: job.category } }, { id: job.requestedTailorId ?? "" }] },
+    where: { AND: [activeMemberWhere(), { OR: [{ categories: { has: job.category } }, { id: job.requestedTailorId ?? "" }] }] },
     include: { user: { select: { email: true } } },
   });
   return tailors.filter((t) => {

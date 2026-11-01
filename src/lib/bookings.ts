@@ -2,6 +2,7 @@ import "server-only";
 import type { ClubStatus } from "@prisma/client";
 import { db } from "./db";
 import { notify } from "./notify";
+import { VOUCHER_POINTS, pointsEarned } from "./rewards";
 
 /**
  * Marks a booking paid. Idempotent: Stripe can deliver the same webhook more
@@ -16,6 +17,14 @@ export async function confirmBooking(bookingId: string) {
     await tx.quote.update({ where: { id: b.quoteId }, data: { status: "ACCEPTED" } });
     await tx.quote.updateMany({ where: { jobId: b.jobId, id: { not: b.quoteId }, status: "PENDING" }, data: { status: "DECLINED" } });
     await tx.job.update({ where: { id: b.jobId }, data: { status: "BOOKED" } });
+    // Rewards: earn on every booking made through tailor me; spend if a voucher was used.
+    await tx.pointsEntry.createMany({
+      data: [
+        { userId: b.customerId, bookingId: b.id, reason: b.isRepeat ? "rebook" : "booking", points: pointsEarned(b.isRepeat) },
+        ...(b.voucherCents > 0 ? [{ userId: b.customerId, bookingId: b.id, reason: "voucher", points: -VOUCHER_POINTS }] : []),
+      ],
+      skipDuplicates: true,
+    });
     return updated;
   });
   if (!booking) return;
@@ -49,4 +58,18 @@ export async function bookedTailorIds(customerId: string, exceptJobId?: string) 
     distinct: ["tailorId"],
   });
   return new Set(rows.map((r) => r.tailorId));
+}
+
+export async function pointsBalance(userId: string) {
+  const agg = await db.pointsEntry.aggregate({ where: { userId }, _sum: { points: true } });
+  return agg._sum.points ?? 0;
+}
+
+/** Points not already promised to a voucher on an unpaid booking (so one voucher can't be used twice). */
+export async function spendablePoints(userId: string, exceptBookingId?: string) {
+  const [balance, held] = await Promise.all([
+    pointsBalance(userId),
+    db.booking.count({ where: { customerId: userId, status: "PENDING_PAYMENT", voucherCents: { gt: 0 }, ...(exceptBookingId && { id: { not: exceptBookingId } }) } }),
+  ]);
+  return balance - held * VOUCHER_POINTS;
 }

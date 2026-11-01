@@ -8,7 +8,7 @@ import { MAX_PORTFOLIO_PHOTOS, isCategory } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { notify } from "@/lib/notify";
 import { billingPortalUrl, changeClubTier, clubCheckoutUrl, paymentsMode } from "@/lib/payments";
-import { canQuote, isPlus } from "@/lib/rules";
+import { canQuote, isClubMember, isPlus, isSuspended } from "@/lib/rules";
 import { MAX_PHOTO_BYTES, savePhoto, sniffImage } from "@/lib/storage";
 import { contactRefusal, findContactDetails } from "@/lib/contact-filter";
 import { findSuburb } from "@/lib/suburbs";
@@ -164,7 +164,7 @@ const tierFrom = (form: FormData) => (form.get("tier") === "PLUS" ? "PLUS" : "CL
 
 export async function joinClub(form: FormData) {
   const { user, tailor } = await requireTailor("/tailor");
-  if (tailor.clubStatus === "ACTIVE") redirect("/tailor");
+  if (tailor.clubStatus === "ACTIVE" || isSuspended(tailor)) redirect("/tailor");
   redirect(await clubCheckoutUrl({ tailorId: tailor.id, email: user.email, stripeCustomerId: tailor.stripeCustomerId, tier: tierFrom(form) }));
 }
 
@@ -172,7 +172,7 @@ export async function joinClub(form: FormData) {
 export async function changeTier(form: FormData) {
   const { tailor } = await requireTailor("/tailor");
   const tier = tierFrom(form);
-  if (tailor.clubStatus !== "ACTIVE" || tailor.clubTier === tier) redirect("/tailor");
+  if (!isClubMember(tailor) || tailor.clubTier === tier) redirect("/tailor");
   if (paymentsMode() === "stripe") {
     if (!tailor.stripeSubscriptionId) redirect("/tailor");
     await changeClubTier(tailor.stripeSubscriptionId, tier);

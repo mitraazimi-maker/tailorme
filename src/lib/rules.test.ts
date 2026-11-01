@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canAcceptQuote, canQuote, canReview, canTailorSeeJob, contactShared, isPlus } from "./rules";
+import { canAcceptQuote, canQuote, canReview, canTailorSeeJob, contactShared, isClubMember, isPlus } from "./rules";
 
 const tailor = { id: "t1", userId: "u-t1", clubStatus: "ACTIVE" as const, clubTier: "CLUB" as const };
 const plus = { ...tailor, id: "t-plus", clubTier: "PLUS" as const };
@@ -91,4 +91,19 @@ describe("exclusive rebooks", () => {
     expect(canQuote(plus, rebook, 0, false).ok).toBe(false);
   });
   it("once opened up, everyone can", () => expect(canQuote(plus, { ...rebook, exclusive: false }, 0, false).ok).toBe(true));
+});
+
+describe("suspension", () => {
+  const suspended = { ...plus, suspendedUntil: new Date(Date.now() + 864e5) };
+  it("a suspended tailor isn't a member and can't quote or see jobs", () => {
+    expect(isClubMember(suspended)).toBe(false);
+    expect(isPlus(suspended)).toBe(false);
+    const v = canQuote(suspended, job, 0, false);
+    expect(!v.ok && v.reason).toMatch(/suspended/);
+    expect(canTailorSeeJob(suspended, job, null).ok).toBe(false);
+  });
+  it("membership counts again once the suspension ends", () =>
+    expect(isClubMember({ ...plus, suspendedUntil: new Date(Date.now() - 1000) })).toBe(true));
+  it("a suspended tailor keeps access to jobs they're already booked on", () =>
+    expect(canTailorSeeJob(suspended, { ...job, status: "BOOKED" }, suspended.id).ok).toBe(true));
 });

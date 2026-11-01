@@ -5,6 +5,7 @@ import { getUser } from "@/lib/auth";
 import { BOOKING_FEE_LABEL, catName } from "@/lib/catalog";
 import { bookedTailorIds } from "@/lib/bookings";
 import { db } from "@/lib/db";
+import { isClubMember } from "@/lib/rules";
 import { fabric, money } from "@/lib/fabric";
 import { getTailorBySlug, replyLabel } from "@/lib/tailors";
 import { toggleMyTailor } from "@/app/actions/customer";
@@ -19,7 +20,7 @@ export default async function Profile({ params }: { params: Promise<{ slug: stri
   const user = await getUser();
   const data = await getTailorBySlug(slug, user?.suburb ?? null);
   // Lapsed members aren't listed, but their own page stays visible to them.
-  if (!data || (data.profile.clubStatus !== "ACTIVE" && data.profile.userId !== user?.id)) notFound();
+  if (!data || (!isClubMember(data.profile) && data.profile.userId !== user?.id)) notFound();
   const { profile: t, card, sub, bookings } = data;
   const repeat = user ? (await bookedTailorIds(user.id)).has(t.id) : false;
   const isMine = user ? !!(await db.myTailor.findUnique({ where: { customerId_tailorId: { customerId: user.id, tailorId: t.id } } })) : false;

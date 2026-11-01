@@ -61,7 +61,14 @@ async function main() {
       db.user.create({ data: { email: `${first.toLowerCase()}@example.com`, firstName: first, passwordHash: hash, suburb: "Paddington", isSample: true } }),
     ),
   );
-  await db.user.create({ data: { email: "customer@example.com", firstName: "Alex", passwordHash: hash, suburb: "Paddington", isSample: true } });
+  // 40 sample points, so the next booking tips Alex over 50 and earns a voucher.
+  await db.user.create({
+    data: {
+      email: "customer@example.com", firstName: "Alex", passwordHash: hash, suburb: "Paddington", isSample: true,
+      points: { create: { points: 40, reason: "sample" } },
+    },
+  });
+  await db.user.create({ data: { email: "admin@example.com", firstName: "Admin", passwordHash: hash, role: "ADMIN", isSample: true } });
 
   let n = 0;
   for (const [ti, t] of TAILORS.entries()) {
@@ -107,7 +114,7 @@ async function main() {
       });
     }
   }
-  console.log(`Seeded ${TAILORS.length} sample tailors. Log in with any of them, or customer@example.com, password "${PASSWORD}".`);
+  console.log(`Seeded ${TAILORS.length} sample tailors. Log in with any of them, customer@example.com or admin@example.com, password "${PASSWORD}".`);
 }
 
 main().finally(() => db.$disconnect());

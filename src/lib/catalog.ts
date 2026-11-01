@@ -24,6 +24,8 @@ export const PLUS_PRICE_LABEL = "$29/month";
 /** Club Plus members see new jobs this long before standard Club members. */
 export const HEAD_START_MINUTES = 15;
 export const MAX_PORTFOLIO_PHOTOS = 12;
+/** Penalty for an upheld report of arranging work outside tailor me. */
+export const SUSPENSION_MONTHS = 6;
 export const MAX_QUOTES_PER_JOB = 3;
 export const MAX_PHOTOS = 6;
 

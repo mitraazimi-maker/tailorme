@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Disclaimer, IntroNote, Stars, Status } from "@/components/ui";
-import { acceptQuote, cancelJob, leaveReview, openJobToAll } from "@/app/actions/customer";
-import { bookedTailorIds } from "@/lib/bookings";
+import { acceptQuote, cancelJob, leaveReview, openJobToAll, reportOffPlatform } from "@/app/actions/customer";
+import { bookedTailorIds, spendablePoints } from "@/lib/bookings";
+import { pointsEarned, voucherFor } from "@/lib/rewards";
 import { requireUser } from "@/lib/auth";
 import { BOOKING_FEE_LABEL, bookingFeeCents, estimate } from "@/lib/catalog";
 import { db } from "@/lib/db";
@@ -12,7 +13,7 @@ import { patternFor } from "@/lib/tailors";
 
 export const metadata = { title: "Job" };
 
-type SP = { posted?: string; booked?: string; cancelled?: string; reviewed?: string; opened?: string; error?: string };
+type SP = { posted?: string; booked?: string; cancelled?: string; reviewed?: string; opened?: string; reported?: string; error?: string };
 
 export default async function JobPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<SP> }) {
   const { id } = await params;
@@ -29,7 +30,12 @@ export default async function JobPage({ params, searchParams }: { params: Promis
   });
   if (!job || job.customerId !== user.id) notFound();
 
-  const repeatTailors = await bookedTailorIds(user.id, job.id);
+  const [repeatTailors, spendable] = await Promise.all([bookedTailorIds(user.id, job.id), spendablePoints(user.id, job.booking?.id)]);
+  const feeFor = (q: { priceCents: number; tailorId: string }) => {
+    const fee = bookingFeeCents(q.priceCents, repeatTailors.has(q.tailorId));
+    const voucher = voucherFor(spendable, fee);
+    return { fee, voucher, pay: fee - voucher };
+  };
   const ratings = await db.review.groupBy({ by: ["tailorId"], where: { tailorId: { in: job.quotes.map((q) => q.tailorId) } }, _avg: { rating: true }, _count: true });
   const rating = (tid: string) => ratings.find((r) => r.tailorId === tid);
   const booking = job.booking;
@@ -44,6 +50,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
       {sp.booked && !shared && <p className="notice" style={{ marginBottom: 16 }}>Payment received. Confirming your booking… refresh in a moment.</p>}
       {sp.cancelled && <p className="notice" style={{ marginBottom: 16 }}>Payment cancelled. Nothing was charged. You can book any quote below.</p>}
       {sp.reviewed && <p className="notice ok" style={{ marginBottom: 16 }}>Thanks for your review.</p>}
+      {sp.reported && <p className="notice ok" style={{ marginBottom: 16 }}>Thanks for telling us. We’ll look into it. The tailor won’t see your report.</p>}
       {sp.opened && <p className="notice ok" style={{ marginBottom: 16 }}>Your job is now open to other tailors nearby.</p>}
       {sp.error && <p className="notice bad" role="alert" style={{ marginBottom: 16 }}>{sp.error}</p>}
 
@@ -67,15 +74,24 @@ export default async function JobPage({ params, searchParams }: { params: Promis
                 {booking.tailor.user.phone && <><dt>Phone</dt><dd><a className="link" href={`tel:${booking.tailor.user.phone}`}>{booking.tailor.user.phone}</a></dd></>}
                 {booking.tailor.shopAddress && <><dt>Address</dt><dd>{booking.tailor.shopAddress}</dd></>}
                 {booking.tailor.openingHours && <><dt>Hours</dt><dd>{booking.tailor.openingHours}</dd></>}
-                <dt>Booking fee</dt><dd className="num">{money(booking.feeCents)} paid</dd>
+                <dt>Booking fee</dt><dd className="num">{money(booking.feeCents - booking.voucherCents)} paid{booking.voucherCents > 0 && ` (${money(booking.voucherCents)} voucher)`}</dd>
               </dl>
               <p className="small muted" style={{ marginTop: 14 }}>Contact the tailor to arrange drop-off or a fitting. You pay the tailor directly for the work.</p>
               <div style={{ marginTop: 12 }}><Disclaimer /></div>
               <IntroNote />
               <div className="mytailor" style={{ marginTop: 14, justifyContent: "space-between", flexWrap: "wrap" }}>
-                <span>Next time, rebook {booking.tailor.businessName} here. It’s a flat $5, they get your fit notes, and you keep your booking history and reviews.</span>
+                <span>You earned {pointsEarned(booking.isRepeat)} rewards points. Next time, rebook {booking.tailor.businessName} here: it’s a flat $5, earns double points, and they get your fit notes.</span>
                 <Link className="btn btn-ink btn-sm" href={`/post?tailor=${booking.tailor.slug}&rebook=1`}>Rebook</Link>
               </div>
+              <details id="report" style={{ marginTop: 14 }}>
+                <summary className="small muted" style={{ cursor: "pointer" }}>Report a problem: they asked me to book or pay outside tailor me</summary>
+                <form action={reportOffPlatform} className="stack" style={{ marginTop: 10 }}>
+                  <input type="hidden" name="bookingId" value={booking.id} />
+                  <textarea className="inp" name="details" required minLength={10} maxLength={2000} placeholder="What did they say or do?" />
+                  <p className="small muted">Private: the tailor won’t see who reported it. We check every report before acting on it.</p>
+                  <button className="btn btn-ghost btn-sm">Send report</button>
+                </form>
+              </details>
             </div>
           )}
 
@@ -93,6 +109,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
                 </div>
               ))}
               <textarea className="inp" name="body" required minLength={10} maxLength={2000} placeholder="What did they do, and how did it turn out?" />
+              <label className="check small"><input type="checkbox" name="offPlatform" />They suggested booking or paying outside tailor me next time (kept private)</label>
               <p className="small muted">Reviews are published as written and can’t be edited later.</p>
               <button className="btn btn-primary">Post review</button>
             </form>
@@ -138,7 +155,14 @@ export default async function JobPage({ params, searchParams }: { params: Promis
                             <>
                               <form action={acceptQuote}>
                                 <input type="hidden" name="quoteId" value={q.id} />
-                                <button className="btn btn-primary btn-sm">Book · {money(bookingFeeCents(q.priceCents, repeatTailors.has(q.tailorId)))} booking fee</button>
+                                <button className="btn btn-primary btn-sm">
+                                  {(() => {
+                                    const f = feeFor(q);
+                                    if (!f.voucher) return <>Book · {money(f.fee)} booking fee</>;
+                                    if (!f.pay) return <>Book · free with your voucher</>;
+                                    return <>Book · {money(f.pay)} booking fee ({money(f.voucher)} voucher off)</>;
+                                  })()}
+                                </button>
                               </form>
                               {repeatTailors.has(q.tailorId) && <span className="small muted">Flat $5 because you’ve booked them before</span>}
                             </>

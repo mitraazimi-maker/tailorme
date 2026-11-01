@@ -23,10 +23,11 @@ export default async function DevCheckout({ searchParams }: { searchParams: Prom
           <>
             <h2>tailor me booking fee</h2>
             <p className="muted">Job {booking.job.ref} with {booking.tailor.businessName}</p>
-            <p className="num" style={{ fontSize: 32 }}>{money(booking.feeCents)}</p>
+            <p className="num" style={{ fontSize: 32 }}>{money(booking.feeCents - booking.voucherCents)}</p>
+            {booking.voucherCents > 0 && <p className="small muted">{money(booking.feeCents)} fee less a {money(booking.voucherCents)} rewards voucher</p>}
             <form action={simulateBookingPayment}>
               <input type="hidden" name="booking" value={booking.id} />
-              <button className="btn btn-primary" style={{ width: "100%" }}>Pay {money(booking.feeCents)}</button>
+              <button className="btn btn-primary" style={{ width: "100%" }}>Pay {money(booking.feeCents - booking.voucherCents)}</button>
             </form>
             <Link className="btn btn-ghost" href={`/jobs/${booking.jobId}?cancelled=1`}>Cancel</Link>
           </>

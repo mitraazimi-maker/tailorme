@@ -6,7 +6,8 @@ export type Verdict = { ok: true } | { ok: false; reason: string };
 const ok: Verdict = { ok: true };
 const no = (reason: string): Verdict => ({ ok: false, reason });
 
-type TailorLike = { id: string; userId: string; clubStatus: ClubStatus; clubTier: ClubTier };
+type TailorLike = { id: string; userId: string; clubStatus: ClubStatus; clubTier: ClubTier; suspendedUntil?: Date | null };
+type MemberLike = { clubStatus: ClubStatus; suspendedUntil?: Date | null };
 type JobLike = {
   id: string;
   customerId: string;
@@ -17,8 +18,17 @@ type JobLike = {
   exclusive?: boolean;
 };
 
-export const isClubMember = (t: { clubStatus: ClubStatus } | null | undefined) => t?.clubStatus === "ACTIVE";
-export const isPlus = (t: { clubStatus: ClubStatus; clubTier: ClubTier } | null | undefined) => isClubMember(t) && t?.clubTier === "PLUS";
+export const isSuspended = (t: { suspendedUntil?: Date | null } | null | undefined, now = new Date()) =>
+  !!t?.suspendedUntil && t.suspendedUntil > now;
+/** A paying member who isn't suspended. Everything Club-only checks this. */
+export const isClubMember = (t: MemberLike | null | undefined, now = new Date()) => t?.clubStatus === "ACTIVE" && !isSuspended(t, now);
+export const isPlus = (t: (MemberLike & { clubTier: ClubTier }) | null | undefined) => isClubMember(t) && t?.clubTier === "PLUS";
+
+/** Prisma filter matching isClubMember, for queries. */
+export const activeMemberWhere = (now = new Date()) => ({
+  clubStatus: "ACTIVE" as const,
+  OR: [{ suspendedUntil: null }, { suspendedUntil: { lte: now } }],
+});
 
 /** End of the Club Plus head start for a job when one or more Plus members match it. */
 export const headStartEnds = (createdAt: Date) => new Date(createdAt.getTime() + HEAD_START_MINUTES * 60_000);
@@ -41,6 +51,7 @@ const headStartMessage = (tailor: TailorLike, job: JobLike, now: Date) => {
 };
 
 export function canQuote(tailor: TailorLike, job: JobLike, quoteCount: number, alreadyQuoted: boolean, now = new Date()): Verdict {
+  if (isSuspended(tailor, now)) return no("Your Club membership is suspended.");
   if (!isClubMember(tailor)) return no("Join the tailor me Club to quote on jobs.");
   if (job.customerId === tailor.userId) return no("You can’t quote on your own job.");
   if (job.status !== "OPEN") return no("This job is no longer taking quotes.");

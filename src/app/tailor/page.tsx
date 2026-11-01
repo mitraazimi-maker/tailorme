@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { money } from "@/lib/fabric";
 import { paymentsMode } from "@/lib/payments";
 import { HEAD_START_MINUTES, MAX_PORTFOLIO_PHOTOS } from "@/lib/catalog";
-import { isClubMember, isPlus } from "@/lib/rules";
+import { isClubMember, isPlus, isSuspended } from "@/lib/rules";
 import { TailorTabs } from "./TailorTabs";
 
 export const metadata = { title: "Tailor dashboard" };
@@ -32,12 +32,26 @@ export default async function TailorHome({ searchParams }: { searchParams: Promi
   ].filter(Boolean) as string[];
   const member = isClubMember(tailor);
   const plus = isPlus(tailor);
+  const suspended = isSuspended(tailor);
+  const warnings = await db.conductReport.findMany({ where: { tailorId: tailor.id, status: "WARNED" }, orderBy: { resolvedAt: "desc" }, take: 3 });
 
   return (
     <div className="wrap page">
       <TailorTabs current="/tailor" />
       <div className="page-head"><h1>{tailor.businessName}</h1><Link className="btn btn-ghost btn-sm" href={`/tailors/${tailor.slug}`}>View public profile</Link></div>
       {club && <p className="notice ok" style={{ marginBottom: 16 }}>Welcome to the tailor me Club. It can take a moment for your membership to show as active.</p>}
+      {suspended && (
+        <div className="notice bad" role="alert" style={{ marginBottom: 16 }}>
+          <b style={{ color: "var(--ink)" }}>Your Club membership is suspended until {tailor.suspendedUntil!.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}.</b>{" "}
+          You’re hidden from search and can’t quote on new jobs. Bookings you already have still stand.
+          {tailor.suspensionReason && <div style={{ marginTop: 6 }}>Reason: {tailor.suspensionReason}</div>}
+        </div>
+      )}
+      {!suspended && warnings.length > 0 && (
+        <div className="notice bad" style={{ marginBottom: 16 }}>
+          <b style={{ color: "var(--ink)" }}>Warning on your account:</b> {warnings[0].adminNote} A further upheld report of booking customers outside tailor me means a 6-month suspension.
+        </div>
+      )}
       {tier === "plus" && <p className="notice ok" style={{ marginBottom: 16 }}>You’re on Club Plus. You’re now featured in search and get first look at new jobs.</p>}
       {tier === "club" && <p className="notice ok" style={{ marginBottom: 16 }}>You’re back on Club at $10/month.</p>}
 
@@ -99,14 +113,14 @@ export default async function TailorHome({ searchParams }: { searchParams: Promi
               {tailor.clubRenewsAt && ` Renews ${tailor.clubRenewsAt.toLocaleDateString("en-AU", { day: "numeric", month: "short" })}.`}
             </p>
           )}
-          {!member && (
+          {!member && !suspended && (
             <>
               <p className="muted small">Join to appear in search, see job photos and quote. No lead fees and no commission. Customers pay tailor me the booking fee, not you.</p>
               {tailor.clubStatus === "PAST_DUE" && <p className="notice bad">Your last payment didn’t go through. Update your card to stay listed.</p>}
               <form action={joinClub}><input type="hidden" name="tier" value="CLUB" /><button className="btn btn-ghost" style={{ width: "100%" }}>Join the Club · $10/month</button></form>
             </>
           )}
-          {!plus && (
+          {!plus && !suspended && (
             <div className="notice" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <b style={{ color: "var(--ink)" }}>Club Plus · $29/month</b>
               <ul style={{ margin: 0, paddingLeft: 18 }}>
