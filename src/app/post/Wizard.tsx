@@ -7,6 +7,24 @@ import { ACKNOWLEDGEMENT, BOOKING_FEE_LABEL, FITTING, GARMENTS, INTRO, MAX_PHOTO
 import { contactRefusal, findContactDetails } from "@/lib/contact-filter";
 import { SUBURB_NAMES, findSuburb } from "@/lib/suburbs";
 
+const DRAFT_KEY = "tailorme:job-draft";
+const DRAFT_MAX_AGE_MS = 14 * 864e5;
+type Draft = {
+  context: string;
+  savedAt: number;
+  step: number;
+  garment: string | null;
+  work: string | null;
+  description: string;
+  fitting: string | null;
+  timing: string | null;
+  wantsPickup: boolean;
+  suburb: string;
+  firstName: string;
+  email: string;
+  photos: number;
+};
+
 const STEPS = ["Garment", "The work", "Details", "Timing", "Your details", "Review"];
 
 type Props = {
@@ -42,6 +60,58 @@ export default function Wizard({ user: initialUser, defaultSuburb, tailor, reboo
   const top = useRef<HTMLDivElement>(null);
 
   useEffect(() => () => photos.forEach((p) => URL.revokeObjectURL(p.url)), []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Draft saving: answers are kept in this browser (not photos or the password) so leaving
+  // the page or refreshing doesn't lose them. Cleared once the job is posted.
+  const draftContext = `${tailor?.slug ?? ""}|${rebook ? "rebook" : ""}`;
+  const [restored, setRestored] = useState<{ photos: number } | null>(null);
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      const d = raw ? (JSON.parse(raw) as Draft) : null;
+      if (d && d.context === draftContext && Date.now() - d.savedAt < DRAFT_MAX_AGE_MS) {
+        setGarment(d.garment);
+        setWork(d.work);
+        setDescription(d.description);
+        setFitting(d.fitting);
+        setTiming(d.timing);
+        setWantsPickup(d.wantsPickup);
+        if (d.suburb) setSuburb(d.suburb);
+        setFirstName(d.firstName);
+        setEmail(d.email);
+        // Photos can't be saved, so anyone past the photo step goes back to re-add them.
+        setStep(d.photos > 0 ? Math.min(d.step, 2) : d.step);
+        if (d.step > 0) setRestored({ photos: d.photos });
+      }
+    } catch {
+      /* storage unavailable: start fresh */
+    }
+    setDraftLoaded(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!draftLoaded) return;
+    const d: Draft = { context: draftContext, savedAt: Date.now(), step, garment, work, description, fitting, timing, wantsPickup, suburb, firstName, email, photos: photos.length };
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+    } catch {
+      /* storage full or blocked: carry on without a draft */
+    }
+  }, [draftLoaded, draftContext, step, garment, work, description, fitting, timing, wantsPickup, suburb, firstName, email, photos.length]);
+  function clearDraft() {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch {}
+  }
+  function startAgain() {
+    clearDraft();
+    setGarment(null); setWork(null); setDescription(""); setFitting(null); setTiming(null); setWantsPickup(false);
+    setSuburb(defaultSuburb); setFirstName(""); setEmail(""); setPassword(""); setAck(false);
+    photos.forEach((p) => URL.revokeObjectURL(p.url));
+    setPhotos([]);
+    setRestored(null);
+    go(0);
+  }
 
   function addFiles(list: FileList | null) {
     if (!list) return;
@@ -79,6 +149,7 @@ export default function Wizard({ user: initialUser, defaultSuburb, tailor, reboo
 
   function go(n: number) {
     setErr("");
+    setRestored(null);
     setStep(n);
     top.current?.scrollIntoView({ block: "start" });
   }
@@ -140,7 +211,21 @@ export default function Wizard({ user: initialUser, defaultSuburb, tailor, reboo
       const res = await fetch("/api/jobs", { method: "POST", body: fd });
       const body = await res.json().catch(() => ({}));
       if (res.status === 409 && !account) {
-        // The email already has an account: log in right here, then the job posts with everything kept.
+        // The email already has an account. Try the password they typed; if it's theirs, log in and post.
+        const login = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
+        const who = await login.json().catch(() => ({}));
+        if (login.ok) {
+          const acct = { firstName: who.firstName as string, email: who.email as string };
+          setUser(acct);
+          router.refresh();
+          return post(acct);
+        }
+        if (login.status === 403) {
+          setErr(who.error ?? "That account can’t post jobs.");
+          setBusy(false);
+          return;
+        }
+        // Otherwise ask for the password right here; everything entered is kept.
         setAuthMode("login");
         setPassword("");
         setPostAfterLogin(true);
@@ -153,6 +238,7 @@ export default function Wizard({ user: initialUser, defaultSuburb, tailor, reboo
         setBusy(false);
         return;
       }
+      clearDraft();
       router.push(`/jobs/${body.id}?posted=1`);
       router.refresh();
     } catch {
@@ -175,6 +261,14 @@ export default function Wizard({ user: initialUser, defaultSuburb, tailor, reboo
         <div className="lbl"><span>{STEPS[step]}</span><span className="num">{step + 1} / {STEPS.length}</span></div>
         <div className="wtape"><div className="fill" style={{ width: `${pct}%` }} /></div>
       </div>
+      {restored && (
+        <div className="notice" style={{ marginBottom: 18, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <span style={{ flex: "1 1 240px" }}>
+            We’ve kept your answers from last time.{restored.photos > 0 && " Photos can’t be saved, so please add them again."}
+          </span>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={startAgain}>Start again</button>
+        </div>
+      )}
       {tailor && rebook && <p className="notice ok" style={{ marginBottom: 18 }}>Rebooking <b>{tailor.name}</b>. Only they’ll see this job, and the booking fee is a flat $5. You can open it to other tailors later.</p>}
       {tailor && !rebook && <p className="notice" style={{ marginBottom: 18 }}>Requesting a quote from <b>{tailor.name}</b>. Other matching tailors nearby can quote too.</p>}
 
@@ -289,7 +383,7 @@ export default function Wizard({ user: initialUser, defaultSuburb, tailor, reboo
             </>
           ) : (
             <>
-              <p className="sub">Create an account to see and compare your quotes. Tailors see your first name and suburb only. Already have an account? <button type="button" className="link" style={{ background: "none", border: 0, padding: 0 }} onClick={() => { setAuthMode("login"); setErr(""); }}>Log in here</button></p>
+              <p className="sub">We’ll send your quotes here. Tailors see your first name and suburb only.</p>
               <div className="two">
                 <div className="field"><label htmlFor="wName">First name</label><input className="inp" id="wName" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" /></div>
                 <div className="field"><label htmlFor="wEmail">Email</label><input className="inp" id="wEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></div>
