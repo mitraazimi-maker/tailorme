@@ -13,8 +13,8 @@ const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600"], variabl
 const geistMono = Geist_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-geist-mono" });
 
 export const metadata: Metadata = {
-  title: { default: "tailor me · Your own tailor, from $14", template: "%s · tailor me" },
-  description: "Sydney’s neighbourhood tailors for everyday alterations and repairs. Send a photo, get guide quotes, or have a tailor come to you for a fitting at home.",
+  title: { default: "tailor me · Your own tailor, at your door", template: "%s · tailor me" },
+  description: "Sydney’s private tailors for everyday alterations and repairs. Choose your tailor and have them come to you for a fitting at home.",
 };
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
 
@@ -35,7 +35,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </Link>
             <nav className="nav-links">
               <Link className="hide-sm" href="/tailors">Find a tailor</Link>
-              <Link className="hide-sm" href="/#pricing">Price guide</Link>
+              <Link className="hide-sm" href="/#at-home">At home</Link>
               {!user && <Link className="hide-sm" href="/for-tailors">For tailors</Link>}
               {user ? (
                 <>

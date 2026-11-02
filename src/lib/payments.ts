@@ -45,7 +45,7 @@ export async function bookingCheckoutUrl(args: { bookingId: string; jobId: strin
           unit_amount: args.feeCents,
           product_data: {
             name: "tailor me booking fee",
-            description: `Job ${args.jobRef} with ${args.tailorName}. The work itself is paid to the tailor directly.`,
+            description: `Job ${args.jobRef} with ${args.tailorName}.`,
           },
         },
       },

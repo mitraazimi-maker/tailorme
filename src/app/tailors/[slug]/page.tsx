@@ -2,9 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Disclaimer, Flags, IntroNote, Stars } from "@/components/ui";
 import { getUser } from "@/lib/auth";
-import { BOOKING_FEE_LABEL, catName } from "@/lib/catalog";
+import { catName } from "@/lib/catalog";
 import { bookedTailorIds } from "@/lib/bookings";
-import { AT_HOME_LINE, AT_HOME_NAME, pickupPriceLabel } from "@/lib/pickup";
+import { AT_HOME_LINE, AT_HOME_NAME } from "@/lib/pickup";
 import { db } from "@/lib/db";
 import { isClubMember } from "@/lib/rules";
 import { fabric, money } from "@/lib/fabric";
@@ -106,7 +106,7 @@ export default async function Profile({ params }: { params: Promise<{ slug: stri
           <div className="eyebrow">Request a quote</div>
           <h3>{reply ? `Usually replies in ${reply}` : "Replies within two hours in opening hours"}</h3>
           <div className="facts">
-            <div><small>From</small><b className="num">{money(card.fromCents)}</b></div>
+            <div><small>Experience</small><b className="num">{t.yearsExperience != null ? `${t.yearsExperience} years` : "—"}</b></div>
             <div><small>Fittings</small><b>{t.comesToCustomer || t.offersPickup ? "Studio or home" : "At studio"}</b></div>
             <div><small>Rush jobs</small><b>{t.sameDay ? "Same day" : "Not offered"}</b></div>
             <div><small>Speaks</small><b>{t.languages.join(", ") || "English"}</b></div>
@@ -115,16 +115,15 @@ export default async function Profile({ params }: { params: Promise<{ slug: stri
           {t.offersPickup && (
             <div className="mytailor" style={{ flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
               <span className="eyebrow" style={{ color: "var(--tape)" }}>Concierge</span>
-              <b style={{ color: "var(--ink)" }}>{AT_HOME_NAME} · {pickupPriceLabel(t.pickupFeeCents)}</b>
+              <b style={{ color: "var(--ink)" }}>{AT_HOME_NAME}</b>
               <span>{AT_HOME_LINE}</span>
               <span>Within {t.pickupRadiusKm} km of {t.suburb}{t.pickupNote ? ` · ${t.pickupNote}` : ""}.</span>
-              <span className="small">Arranged with and paid to the tailor.</span>
             </div>
           )}
           {user?.id !== t.userId && (
             <>
               {repeat ? (
-                <Link className="btn btn-primary" href={`/post?tailor=${t.slug}&rebook=1`}>Rebook · flat $5 booking fee</Link>
+                <Link className="btn btn-primary" href={`/post?tailor=${t.slug}&rebook=1`}>Rebook</Link>
               ) : (
                 <Link className="btn btn-primary" href={`/post?tailor=${t.slug}`}>Get a quote from {t.businessName.split(" ")[0].replace(/’s$|'s$/, "")}</Link>
               )}
@@ -137,7 +136,6 @@ export default async function Profile({ params }: { params: Promise<{ slug: stri
           )}
           <div className="mytailor"><span>Your tailor sees your fit notes and past jobs, so rebooking is quick.</span></div>
           <Disclaimer />
-          <p style={{ fontSize: 13, color: "var(--ink-2)" }}>The tailor me booking fee is {BOOKING_FEE_LABEL}. You pay the tailor directly for the work.</p>
           <IntroNote className="small muted" />
         </aside>
       </div>

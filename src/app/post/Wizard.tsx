@@ -215,7 +215,7 @@ export default function Wizard({ user, defaultSuburb, tailor, rebook }: Props) {
             <input type="checkbox" id="wPickup" checked={wantsPickup} onChange={(e) => setWantsPickup(e.target.checked)} />
             <span>
               <b>tailor me at home:</b> have the tailor come to me, fit it at home and bring it back. The fitting is free when they collect: they pin it on you before taking it away.
-              <span className="hint" style={{ display: "block" }}>Tailors who offer it add their own pickup price to their quote, paid to them.</span>
+              <span className="hint" style={{ display: "block" }}>Tailors who visit include it in their quote.</span>
             </span>
           </label>
         </>

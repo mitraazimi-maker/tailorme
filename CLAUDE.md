@@ -6,7 +6,9 @@ Project context for Claude Code. Read this before making changes. It records the
 
 A Sydney marketplace that connects people with local tailors and seamstresses for **everyday alterations and repairs**: hems, take-in/let-out, zips and buttons, mending, jeans, school/work uniforms, curtains, same-day express. Modelled loosely on hipages, but for tailoring.
 
-**Positioning:** "Your own tailor, from $14." Affordable luxury: a splurge people can afford. The *experience* feels premium. The *work* is simple and cheap.
+**Positioning:** "Your own tailor, at your door." (changed 2 Nov 2026 from "Your own tailor, from $14.") Affordable luxury: the *experience* feels premium, led by home visits (tailor me at home). The *work* is simple and cheap.
+
+**Customer-facing pages** (decided 2 Nov 2026): the home page, search results and tailor profiles show **no fee or price structure** (no booking-fee %, no Club prices, no price guide or "from $X"; a tailor's own service list on their profile is the exception). Fees are shown at the point of booking. Marketing copy doesn't dwell on dealing with the tailor separately; the legally required notices (rule 3 acknowledgement, rule 4 notice on booking, profiles and footer) stay.
 
 **Not for:** bridal, made-to-measure, bespoke or luxury work. That belongs to Soraya Tailoring (high-end, partner business). tailor me must not compete with it. Soraya will send its low-value/simple overflow jobs to tailor me.
 
@@ -50,7 +52,7 @@ Keep it to these four. Tailors want simplicity.
 - **Wordmark:** "tailor" upright + *me* in italic brass, set in Bodoni Moda. **No icon next to the wordmark.** Square icon (favicon/app/social) = italic brass *me* on a dark ground. Never a "tm" monogram (reads as ™).
 - **Primary CTA label:** "tailor *me*" (wordmark in the button), with an aria-label describing the action.
 - **Signature motif:** brass measuring tape (cm ticks). Used as a page divider and as the job-form progress bar. It is the brand pattern, not a logo.
-- **Voice:** plain, warm, like a person. "Your own tailor, from $14." Never "Uber for tailors" or "on-demand alteration marketplace".
+- **Voice:** plain, warm, like a person. "Your own tailor, at your door." Never "Uber for tailors" or "on-demand alteration marketplace".
 - **Photography:** real tailors' hands, pins, chalk, real local shops. No flat illustrations, gradients or mascots.
 - The business name is registered. Still to do: tailorme.com.au domain, IP Australia trademark (classes 35 and 40, file the logo design too), @tailorme social handles.
 

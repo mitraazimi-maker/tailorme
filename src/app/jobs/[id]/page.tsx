@@ -70,7 +70,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
               <h2>Booked with {booking.tailor.businessName}</h2>
               <dl className="kv">
                 <dt>Guide price</dt><dd className="num">{money(booking.quote.priceCents)}</dd>
-                {booking.quote.pickupFeeCents != null && <><dt>Pickup, delivery &amp; home fitting</dt><dd className="num">{pickupPriceLabel(booking.quote.pickupFeeCents)}, paid to the tailor</dd></>}
+                {booking.quote.pickupFeeCents != null && <><dt>tailor me at home</dt><dd className="num">{pickupPriceLabel(booking.quote.pickupFeeCents)}</dd></>}
                 <dt>Ready by</dt><dd>{booking.quote.readyBy.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })}</dd>
                 <dt>Email</dt><dd><a className="link" href={`mailto:${booking.tailor.user.email}`}>{booking.tailor.user.email}</a></dd>
                 {booking.tailor.user.phone && <><dt>Phone</dt><dd><a className="link" href={`tel:${booking.tailor.user.phone}`}>{booking.tailor.user.phone}</a></dd></>}
@@ -78,7 +78,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
                 {booking.tailor.openingHours && <><dt>Hours</dt><dd>{booking.tailor.openingHours}</dd></>}
                 <dt>Booking fee</dt><dd className="num">{money(booking.feeCents - booking.voucherCents)} paid{booking.voucherCents > 0 && ` (${money(booking.voucherCents)} voucher)`}</dd>
               </dl>
-              <p className="small muted" style={{ marginTop: 14 }}>Contact the tailor to arrange drop-off or a fitting. You pay the tailor directly for the work.</p>
+              <p className="small muted" style={{ marginTop: 14 }}>Your tailor will be in touch to arrange the visit or drop-off. They’ll confirm the final price, and how to pay, once they’ve seen the garment.</p>
               <div style={{ marginTop: 12 }}><Disclaimer /></div>
               <IntroNote />
               <div className="mytailor" style={{ marginTop: 14, justifyContent: "space-between", flexWrap: "wrap" }}>
@@ -152,7 +152,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
                         </div>
                         <div className="price">{money(q.priceCents)}</div>
                         {q.pickupFeeCents != null && (
-                          <p className="msg small">+ {pickupPriceLabel(q.pickupFeeCents)} for tailor me at home (visit, home fitting and delivery), paid to the tailor</p>
+                          <p className="msg small">+ {pickupPriceLabel(q.pickupFeeCents)} for tailor me at home (visit, home fitting and delivery)</p>
                         )}
                         {job.wantsPickup && q.pickupFeeCents == null && <p className="msg small">No pickup offered: you’d drop it off.</p>}
                         {q.message && <p className="msg">“{q.message}”</p>}
@@ -178,7 +178,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
                     );
                   })}
                   <div style={{ marginTop: 14 }}><Disclaimer /></div>
-                  <p className="small muted" style={{ marginTop: 10 }}>The booking fee is {BOOKING_FEE_LABEL}, or a flat $5 with a tailor you’ve booked through tailor me before. It goes to tailor me. You pay the tailor directly for the work, once they’ve inspected the garment and confirmed the price.</p>
+                  <p className="small muted" style={{ marginTop: 10 }}>The booking fee is {BOOKING_FEE_LABEL}, or a flat $5 when you rebook a tailor you’ve booked before. Your tailor confirms the final price once they’ve seen the garment.</p>
                 </div>
               )}
             </div>

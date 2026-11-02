@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { DISCLAIMER, INTRO, catName } from "@/lib/catalog";
-import { fabric, money } from "@/lib/fabric";
-import { HOME_FITTING, pickupPriceLabel } from "@/lib/pickup";
+import { fabric } from "@/lib/fabric";
+import { HOME_FITTING } from "@/lib/pickup";
 import { replyLabel, type TailorCard } from "@/lib/tailor-display";
 
 /** Rule 2: shown wherever a price or quote appears. */
@@ -43,7 +43,7 @@ export function Flags({ t }: { t: Pick<TailorCard, "abnChecked" | "sameDay" | "c
       {t.abnChecked && <span className="pill good">✓ ABN checked</span>}
       {t.sameDay && <span className="pill">Same day</span>}
       {t.comesToCustomer && t.pickupFeeCents == null && <span className="pill">Home fittings</span>}
-      {t.pickupFeeCents != null && <span className="pill" title={HOME_FITTING}>Comes to you · fitting at home {pickupPriceLabel(t.pickupFeeCents)}</span>}
+      {t.pickupFeeCents != null && <span className="pill" title={HOME_FITTING}>Comes to you · fitting at home</span>}
     </>
   );
 }
@@ -63,7 +63,6 @@ export function TailorTile({ t }: { t: TailorCard }) {
         </div>
         <div className="row">
           <span>{reply ? `Replies ${reply}` : ""}</span>
-          {t.fromCents != null && <span className="num">From <b style={{ color: "var(--ink)" }}>{money(t.fromCents)}</b></span>}
         </div>
         <div className="tags">{t.categories.slice(0, 3).map((c) => <span key={c} className="tag">{catName(c)}</span>)}</div>
       </div>
@@ -87,7 +86,6 @@ export function TailorRow({ t }: { t: TailorCard }) {
         <p className="bio">{t.bio}</p>
       </div>
       <div className="side">
-        {t.fromCents != null && <div className="from">From<b>{money(t.fromCents)}</b></div>}
         <span className="btn btn-ink btn-sm">View</span>
       </div>
     </Link>

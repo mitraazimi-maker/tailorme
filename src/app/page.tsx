@@ -1,19 +1,18 @@
 import Link from "next/link";
 import Tape from "@/components/Tape";
-import ClubPitch from "@/components/ClubPitch";
-import { Disclaimer, TailorTile } from "@/components/ui";
-import { CATEGORIES, PRICE_GUIDE, QUICK_JOBS } from "@/lib/catalog";
+import { TailorTile } from "@/components/ui";
+import { CATEGORIES, QUICK_JOBS } from "@/lib/catalog";
 import { fabric } from "@/lib/fabric";
 import { getUser } from "@/lib/auth";
 import { searchTailors } from "@/lib/tailors";
 import { AT_HOME_NAME } from "@/lib/pickup";
 import { findSuburb } from "@/lib/suburbs";
 
-// Illustrative only: not attributed to any real tailor.
-const EXAMPLE = [
-  { who: "Home studio, Paddington", meta: "1.2 km · ready Thu", price: 22, pat: CATEGORIES[0].pat },
-  { who: "Alterations shop, Surry Hills", meta: "1.9 km · ready today", price: 24, pat: CATEGORIES[4].pat },
-  { who: "Tailor, Bondi Junction", meta: "1.6 km · ready tomorrow", price: 18, pat: CATEGORIES[2].pat },
+// Illustrative only: an example of a home visit, not a real booking.
+const VISIT = [
+  { time: "Tue 6:30pm", what: "Your tailor arrives", detail: "Navy suit trousers, at home", pat: CATEGORIES[1].pat },
+  { time: "Tue 6:40pm", what: "Pinned on you", detail: "In the shoes you’ll wear them with", pat: CATEGORIES[0].pat },
+  { time: "Thu 7:00pm", what: "Back at your door", detail: "Pressed and ready to wear", pat: CATEGORIES[2].pat },
 ];
 
 export default async function Home() {
@@ -26,67 +25,67 @@ export default async function Home() {
       <section className="hero">
         <div className="wrap hero-grid">
           <div>
-            <div className="eyebrow">Sydney’s neighbourhood tailors</div>
-            <h1 style={{ marginTop: 14 }}>Your own tailor, <span className="hl">from $14.</span></h1>
-            <p className="lede">The hem, the zip, the jacket that never sat right. Send a photo and a local tailor takes care of it. Or have one come to you for a fitting at home.</p>
+            <div className="eyebrow">Sydney’s private tailors, by appointment</div>
+            <h1 style={{ marginTop: 14 }}>Your own tailor, <span className="hl">at your door.</span></h1>
+            <p className="lede">Hems, fittings and repairs, handled the way a private tailor would. Choose your tailor, and have them come to you.</p>
             <form className="search" action="/tailors">
               <label htmlFor="q"><span>What needs doing?</span><input id="q" name="q" placeholder="e.g. hem work trousers" autoComplete="off" /></label>
               <label htmlFor="sub"><span>Suburb</span><input id="sub" name="suburb" defaultValue={suburb} autoComplete="off" /></label>
               <button className="btn btn-primary btn-brand" type="submit" aria-label="Tailor me: find tailors">tailor <i>me</i></button>
             </form>
             <div className="chips">
+              <Link className="chip" href={`/tailors?pickup=1&suburb=${encodeURIComponent(suburb)}`} aria-pressed="true">Tailors who visit</Link>
               {QUICK_JOBS.map(([j, c]) => (
                 <Link key={j} className="chip" href={`/tailors?q=${encodeURIComponent(j)}&cat=${c}&suburb=${encodeURIComponent(suburb)}`}>{j}</Link>
               ))}
             </div>
           </div>
-          <div className="ticket" aria-label="Example job with quotes">
+          <div className="ticket" aria-label="An example home visit">
             <div className="ticket-head">
-              <div><div className="eyebrow">Example job · Paddington</div><h3 style={{ marginTop: 4 }}>Hem a pair of work trousers, 4 cm</h3></div>
-              <span className="pill y">3 quotes</span>
+              <div><div className="eyebrow" style={{ color: "var(--tape)" }}>{AT_HOME_NAME}</div><h3 style={{ marginTop: 4 }}>An evening fitting in Paddington</h3></div>
+              <span className="pill y">Example</span>
             </div>
             <ul>
-              {EXAMPLE.map((e) => (
-                <li key={e.who}>
-                  <div className="swatch" style={{ background: fabric(e.pat) }} />
-                  <div><div className="who">{e.who}</div><div className="meta">{e.meta}</div></div>
-                  <div className="price">${e.price}</div>
+              {VISIT.map((v) => (
+                <li key={v.time}>
+                  <div className="swatch" style={{ background: fabric(v.pat) }} />
+                  <div><div className="who">{v.what}</div><div className="meta">{v.detail}</div></div>
+                  <div className="price" style={{ fontSize: 14 }}>{v.time}</div>
                 </li>
               ))}
             </ul>
-            <div className="ticket-foot"><span className="pulse" /> Example only · booking fee only if you book</div>
-            <div style={{ padding: "12px 16px 16px" }}><Disclaimer /></div>
+            <div className="ticket-foot"><span className="pulse" /> With tailors who visit, in their own area</div>
           </div>
         </div>
       </section>
       <Tape />
-      <section className="block">
-        <div className="wrap">
-          <div className="section-head"><h2>How it works</h2><p>No calling around. No guessing what it will cost.</p></div>
-          <div className="steps">
-            <div className="step"><span className="n">Step 1</span><h3>Describe the job</h3><p>Pick the garment and the work, add at least one photo and your timeline. Takes about two minutes.</p></div>
-            <div className="step"><span className="n">Step 2</span><h3>Compare quotes</h3><p>Up to three independent tailors reply with a guide price and a ready date. The final price is confirmed once they inspect the garment.</p></div>
-            <div className="step"><span className="n">Step 3</span><h3>Drop it off, or have them come to you</h3><p>Accept the quote you like and pay a small booking fee: 15% of the quote, minimum $5. Visit the studio, or choose a tailor who visits: they fit you at home and bring it back. You deal with the tailor directly from there.</p></div>
-          </div>
-        </div>
-      </section>
-      <section className="block" id="at-home" style={{ paddingTop: 0 }}>
+      <section className="block" id="at-home">
         <div className="wrap">
           <div className="standard">
             <div>
               <div className="eyebrow" style={{ color: "var(--tape)" }}>Concierge · {AT_HOME_NAME}</div>
-              <h2 style={{ marginTop: 12 }}>Your tailor, <span className="serif-i" style={{ color: "var(--tape)" }}>at your door.</span></h2>
-              <p>The way a private tailor works: no trip to the shopping centre, no queue at the counter. Tailors who visit come to you, fit you at home, and bring it back pressed.</p>
+              <h2 style={{ marginTop: 12 }}>The private-tailor experience, <span className="serif-i" style={{ color: "var(--tape)" }}>at home.</span></h2>
+              <p>No trip to the shopping centre, no queue at the counter. Tailors who visit come to you, fit you in your own home, and bring it back pressed.</p>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 22 }}>
                 <Link className="btn btn-primary" href={`/tailors?pickup=1&suburb=${encodeURIComponent(suburb)}`}>Find a tailor who visits</Link>
               </div>
-              <p className="small" style={{ marginTop: 14 }}>Offered by tailors who choose to, at their own visit price, paid to them.</p>
+              <p className="small" style={{ marginTop: 14 }}>Offered by tailors who visit, within their own area.</p>
             </div>
             <ul className="std-list">
-              <li><b>They come to you</b><span>at a time that suits, within their area.</span></li>
-              <li><b>A fitting in your own home</b><span>they pin it on you, in your shoes, in your light. Free with the visit.</span></li>
+              <li><b>They come to you</b><span>at a time that suits, morning or evening.</span></li>
+              <li><b>A fitting in your own home</b><span>pinned on you, in your shoes, in your light.</span></li>
               <li><b>Back to your door, pressed</b><span>ready to wear, with your fit saved for next time.</span></li>
             </ul>
+          </div>
+        </div>
+      </section>
+      <section className="block" style={{ paddingTop: 0 }}>
+        <div className="wrap">
+          <div className="section-head"><h2>How it works</h2><p>A few minutes on your phone. Your tailor takes it from there.</p></div>
+          <div className="steps">
+            <div className="step"><span className="n">Step 1</span><h3>Tell us what needs doing</h3><p>Choose the garment and the work, and add a photo. It takes about two minutes.</p></div>
+            <div className="step"><span className="n">Step 2</span><h3>Choose your tailor</h3><p>Local tailors reply with a ready date and a guide price, confirmed once they see the garment.</p></div>
+            <div className="step"><span className="n">Step 3</span><h3>At home or at the studio</h3><p>Have your tailor come to you for a fitting, or drop it at their studio. It comes back pressed and ready to wear.</p></div>
           </div>
         </div>
       </section>
@@ -95,11 +94,11 @@ export default async function Home() {
           <div className="standard">
             <div>
               <div className="eyebrow" style={{ color: "var(--tape)" }}>The tailor me standard</div>
-              <h2 style={{ marginTop: 12 }}>The tailor experience, at alteration prices.</h2>
-              <p>Every tailor me Club member agrees to four simple things. It’s what makes a $20 hem feel like a visit to your own tailor.</p>
+              <h2 style={{ marginTop: 12 }}>Looked after, every time.</h2>
+              <p>Every tailor me Club member agrees to four things. It’s what makes a simple hem feel like a visit to your own tailor.</p>
             </div>
             <ul className="std-list">
-              <li><b>A reply within two hours</b><span>during opening hours, with a guide price and a ready date.</span></li>
+              <li><b>A reply within two hours</b><span>during opening hours, with a ready date.</span></li>
               <li><b>Ready when promised</b><span>or a message before the day, never after.</span></li>
               <li><b>Pressed and ready to wear</b><span>every garment comes back pressed, not crumpled in a bag.</span></li>
               <li><b>Remembers your fit</b><span>your tailor keeps your measurements on tailor me, so next time it’s one tap.</span></li>
@@ -109,13 +108,12 @@ export default async function Home() {
       </section>
       <section className="block" style={{ paddingTop: 0 }}>
         <div className="wrap">
-          <div className="section-head"><h2>What can we help with?</h2><p>Typical Sydney prices for everyday alterations.</p></div>
+          <div className="section-head"><h2>What can we help with?</h2><p>Everyday alterations and repairs, done properly.</p></div>
           <div className="cats">
             {CATEGORIES.map((c) => (
               <Link key={c.id} className="cat" href={`/tailors?cat=${c.id}`}>
                 <div className="pat" style={{ background: fabric(c.pat) }} />
                 <div><h3>{c.name}</h3><div style={{ color: "var(--ink-2)", fontSize: 14 }}>{c.desc}</div></div>
-                <div className="range">{c.range}</div>
               </Link>
             ))}
           </div>
@@ -129,28 +127,18 @@ export default async function Home() {
           </div>
         </section>
       )}
-      <section className="block" id="pricing" style={{ paddingTop: 0 }}>
-        <div className="wrap">
-          <div className="section-head"><h2>What should it cost?</h2><p>Typical Sydney prices. Bar shows the usual spread.</p></div>
-          <div className="guide">
-            <table>
-              <thead><tr><th>Job</th><th>Typical</th><th>Range</th><th style={{ width: "30%" }}>Spread</th></tr></thead>
-              <tbody>
-                {PRICE_GUIDE.map(([j, m, lo, hi]) => (
-                  <tr key={j}>
-                    <td>{j}</td><td className="p"><b>${m}</b></td><td className="p">${lo} – ${hi}</td>
-                    <td><div className="bar"><i style={{ left: `${(lo / 75) * 100}%`, width: `${Math.max(((hi - lo) / 75) * 100, 1.5)}%` }} /></div></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div style={{ marginTop: 12 }}><Disclaimer /></div>
-        </div>
-      </section>
       <section className="block" id="makers" style={{ paddingTop: 0 }}>
         <div className="wrap">
-          <ClubPitch />
+          <div className="maker" style={{ gridTemplateColumns: "1fr" }}>
+            <div>
+              <div className="eyebrow" style={{ color: "var(--tape)" }}>For tailors &amp; seamstresses</div>
+              <h2 style={{ marginTop: 10 }}>Be someone’s tailor.</h2>
+              <p>Join the tailor me Club to meet customers nearby, offer home visits, and keep the regulars who come back.</p>
+              <div style={{ marginTop: 22 }}>
+                <Link className="btn btn-primary" href="/for-tailors" style={{ background: "var(--paper)", color: "var(--ink)" }}>Find out more</Link>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </div>
