@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { markCompleted, submitQuote, withdrawQuote } from "@/app/actions/tailor";
+import { markCompleted, recordFit, submitQuote, withdrawQuote } from "@/app/actions/tailor";
+import { FitHistory } from "@/components/fit";
+import { MAX_FIT_NOTE, MEASURES, fitApplies, measuresFor } from "@/lib/fit";
+import { fitRecordFor } from "@/lib/fit-records";
 import { Disclaimer, IntroNote, Status } from "@/components/ui";
 import { requireTailor } from "@/lib/auth";
 import { MAX_QUOTES_PER_JOB, estimate } from "@/lib/catalog";
@@ -14,7 +17,7 @@ export const metadata = { title: "Job" };
 
 const isoDate = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "Australia/Sydney" });
 
-export default async function TailorJob({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ quoted?: string; error?: string }> }) {
+export default async function TailorJob({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ quoted?: string; error?: string; fit?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const { tailor } = await requireTailor(`/tailor/jobs/${id}`);
@@ -50,6 +53,11 @@ export default async function TailorJob({ params, searchParams }: { params: Prom
         take: 10,
       })
     : [];
+  // Booked here = a paid booking with this tailor, so they see the customer's whole fit record.
+  const fitEntries = bookedHere ? await fitRecordFor(bookedHere.customer.id) : [];
+  const thisFit = bookedHere ? fitEntries.find((e) => e.bookingId === bookedHere.id) : undefined;
+  const otherFits = fitEntries.filter((e) => e !== thisFit);
+  const askFit = !!bookedHere && fitApplies(job.garment);
 
   return (
     <div className="wrap page">
@@ -92,10 +100,12 @@ export default async function TailorJob({ params, searchParams }: { params: Prom
                 <dt>Email</dt><dd><a className="link" href={`mailto:${bookedHere.customer.email}`}>{bookedHere.customer.email}</a></dd>
                 {bookedHere.customer.phone && <><dt>Phone</dt><dd><a className="link" href={`tel:${bookedHere.customer.phone}`}>{bookedHere.customer.phone}</a></dd></>}
               </dl>
-              <div style={{ marginTop: 14 }}>
-                <b>Fit notes</b>
-                <p className="muted" style={{ whiteSpace: "pre-wrap", marginTop: 4 }}>{bookedHere.customer.fitNotes || "None saved yet."}</p>
-              </div>
+              {bookedHere.customer.fitNotes && (
+                <div style={{ marginTop: 14 }}>
+                  <b>{bookedHere.customer.firstName}’s own notes</b>
+                  <p className="muted" style={{ whiteSpace: "pre-wrap", marginTop: 4 }}>{bookedHere.customer.fitNotes}</p>
+                </div>
+              )}
               {pastJobs.length > 0 && (
                 <div style={{ marginTop: 14 }}>
                   <b>Past jobs with you</b>
@@ -110,6 +120,42 @@ export default async function TailorJob({ params, searchParams }: { params: Prom
                   <input type="hidden" name="bookingId" value={bookedHere.id} />
                   <input type="hidden" name="jobId" value={job.id} />
                   <button className="btn btn-ink btn-sm">Mark as picked up</button>
+                  {askFit && !thisFit && <span className="small muted" style={{ marginLeft: 10 }}>No fit recorded for this job yet.</span>}
+                </form>
+              )}
+            </div>
+          )}
+
+          {bookedHere && (
+            <div className="panel stack" id="fit">
+              <div>
+                <h2>{bookedHere.customer.firstName}’s fit record</h2>
+                {otherFits.length === 0 && <p className="small muted" style={{ marginTop: 4 }}>Nothing saved from earlier fittings yet.</p>}
+              </div>
+              {otherFits.length > 0 && <FitHistory entries={otherFits} />}
+              {askFit && (
+                <form className="stack" action={recordFit} style={{ borderTop: "1px solid var(--line)", paddingTop: 16 }}>
+                  <input type="hidden" name="jobId" value={job.id} />
+                  <div>
+                    <b>{thisFit ? "Your fit for this job" : "Record the fit"}</b>
+                    <p className="small muted" style={{ marginTop: 4 }}>
+                      Takes a minute after the pinning. In centimetres; leave blank what you didn’t take. Saved to {bookedHere.customer.firstName}’s fit record on tailor me, so rebooking you is one tap. {bookedHere.customer.firstName} and the tailors they book through tailor me can see it.
+                    </p>
+                  </div>
+                  {sp.fit && <p className="notice ok small" role="status">Fit saved to {bookedHere.customer.firstName}’s record.</p>}
+                  <div className="fit-grid">
+                    {measuresFor(job.garment).map((k) => (
+                      <div className="field" key={k}>
+                        <label htmlFor={`m_${k}`}>{MEASURES[k]}</label>
+                        <input className="inp" id={`m_${k}`} name={`m_${k}`} inputMode="decimal" placeholder="cm" defaultValue={thisFit?.measurements[k] ?? ""} />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="field" style={{ marginTop: 0 }}>
+                    <label htmlFor="fitNotesIn">Fit notes</label>
+                    <textarea className="inp" id="fitNotesIn" name="notes" maxLength={MAX_FIT_NOTE} defaultValue={thisFit?.notes ?? ""} placeholder="e.g. Wears 5 cm heels with these. Likes a slight break. Left leg 1 cm shorter." />
+                  </div>
+                  <button className="btn btn-ink btn-sm" style={{ alignSelf: "flex-start" }}>{thisFit ? "Update fit" : "Save fit"}</button>
                 </form>
               )}
             </div>

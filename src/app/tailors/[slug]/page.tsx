@@ -24,6 +24,7 @@ export default async function Profile({ params }: { params: Promise<{ slug: stri
   if (!data || (!isClubMember(data.profile) && data.profile.userId !== user?.id)) notFound();
   const { profile: t, card, sub, bookings } = data;
   const repeat = user ? (await bookedTailorIds(user.id)).has(t.id) : false;
+  const hasFit = repeat && user ? !!(await db.fitRecord.findFirst({ where: { customerId: user.id }, select: { id: true } })) : false;
   const isMine = user ? !!(await db.myTailor.findUnique({ where: { customerId_tailorId: { customerId: user.id, tailorId: t.id } } })) : false;
   const reply = replyLabel(card.replyMins);
   const subs: [string, number | null][] = [["Fit & finish", sub.fitFinish], ["On time", sub.onTime], ["Quote accuracy", sub.quoteAccuracy]];
@@ -134,7 +135,7 @@ export default async function Profile({ params }: { params: Promise<{ slug: stri
               </form>
             </>
           )}
-          <div className="mytailor"><span>Your tailor sees your fit notes and past jobs, so rebooking is quick.</span></div>
+          <div className="mytailor"><span>{repeat && hasFit ? "Your fit is saved on tailor me. Rebook and they start from your measurements." : "Tailors you book see your saved fit record and past jobs, so rebooking is quick."}</span></div>
           <Disclaimer />
           <IntroNote className="small muted" />
         </aside>

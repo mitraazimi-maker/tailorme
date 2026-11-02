@@ -12,6 +12,7 @@ import { canQuote, isClubMember, isPlus, isSuspended } from "@/lib/rules";
 import { MAX_PHOTO_BYTES, savePhoto, sniffImage } from "@/lib/storage";
 import { contactRefusal, findContactDetails } from "@/lib/contact-filter";
 import { findSuburb } from "@/lib/suburbs";
+import { canRecordFit, parseFit } from "@/lib/fit";
 
 const back = (path: string, error: string): never => redirect(`${path}?error=${encodeURIComponent(error)}`);
 
@@ -171,6 +172,25 @@ export async function markCompleted(form: FormData) {
     if (full) await notify(full.customer.email, `How did ${tailor.businessName} go?`, `Leave a review for job ${full.job.ref} at /jobs/${full.jobId}#review`);
   }
   revalidatePath(`/tailor/jobs/${String(form.get("jobId"))}`);
+}
+
+/** The tailor records the fit after the pinning. One entry per booking; they can correct their own. */
+export async function recordFit(form: FormData) {
+  const { tailor } = await requireTailor("/tailor");
+  const jobId = String(form.get("jobId"));
+  const path = `/tailor/jobs/${jobId}`;
+  const booking = await db.booking.findUnique({ where: { jobId }, include: { job: { select: { garment: true } } } });
+  const verdict = canRecordFit(tailor.id, booking);
+  if (!verdict.ok) back(path, verdict.reason);
+  const parsed = parseFit(booking!.job.garment, Object.fromEntries(form));
+  if (!parsed.ok) back(path, parsed.reason);
+  const { measurements, notes } = parsed as Extract<typeof parsed, { ok: true }>;
+  await db.fitRecord.upsert({
+    where: { bookingId: booking!.id },
+    create: { bookingId: booking!.id, customerId: booking!.customerId, tailorId: tailor.id, garment: booking!.job.garment, measurements, notes },
+    update: { measurements, notes },
+  });
+  redirect(`${path}?fit=1#fit`);
 }
 
 const tierFrom = (form: FormData) => (form.get("tier") === "PLUS" ? "PLUS" : "CLUB") as "PLUS" | "CLUB";

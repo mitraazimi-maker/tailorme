@@ -33,9 +33,11 @@ type Props = {
   tailor: { slug: string; name: string } | null;
   /** Rebooking a tailor the customer has booked before: sent only to them, flat repeat fee. */
   rebook: boolean;
+  /** Date of the latest entry in the customer's fit record, if any. */
+  fitSavedOn?: string | null;
 };
 
-export default function Wizard({ user: initialUser, defaultSuburb, tailor, rebook }: Props) {
+export default function Wizard({ user: initialUser, defaultSuburb, tailor, rebook, fitSavedOn }: Props) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [garment, setGarment] = useState<string | null>(null);
@@ -271,6 +273,7 @@ export default function Wizard({ user: initialUser, defaultSuburb, tailor, reboo
       )}
       {tailor && rebook && <p className="notice ok" style={{ marginBottom: 18 }}>Rebooking <b>{tailor.name}</b>. Only they’ll see this job, and the booking fee is a flat $5. You can open it to other tailors later.</p>}
       {tailor && !rebook && <p className="notice" style={{ marginBottom: 18 }}>Requesting a quote from <b>{tailor.name}</b>. Other matching tailors nearby can quote too.</p>}
+      {fitSavedOn && <p className="notice small" style={{ marginBottom: 18 }}>{rebook && tailor ? <><b>{tailor.name}</b> will see</> : "The tailor you book will see"} your saved fit record (last measured {fitSavedOn}), so they start from your measurements.</p>}
 
       {step === 0 && (
         <>

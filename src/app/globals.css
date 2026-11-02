@@ -299,7 +299,8 @@ textarea.inp{min-height:110px;resize:vertical}
 /* ---------- app additions (beyond the prototype) ---------- */
 a{color:inherit;text-decoration:none}
 a.link,.link,.prose a{text-decoration:underline;text-underline-offset:3px}
-button.link{cursor:pointer;color:inherit;font:inherit}
+button.link{cursor:pointer;color:inherit;font:inherit;background:none;border:0;padding:0}
+button.link.small{font-size:14px;color:var(--ink-2)}
 .btn[disabled]{opacity:.5;cursor:not-allowed}
 .nav-links form{display:contents}
 .nav-links a:not(.btn),.nav-links .navbtn{background:none;border:0;padding:8px 12px;border-radius:999px;font-weight:500;color:var(--ink-2)}
@@ -362,3 +363,12 @@ button.link{cursor:pointer;color:inherit;font:inherit}
 
 /* Keep the job form heading clear of the sticky header when the form scrolls itself. */
 .wiz{scroll-margin-top:84px}
+
+/* Fit record */
+.fit-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.fit-list li{padding:14px 0;border-bottom:1px solid var(--line)}
+.fit-list li:first-child{padding-top:0}.fit-list li:last-child{border-bottom:0;padding-bottom:0}
+.fit-head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+.fit-kv{margin-top:8px;font-size:14px}
+.fit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.fit-grid .field{margin-top:0}

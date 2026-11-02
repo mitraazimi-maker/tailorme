@@ -107,6 +107,13 @@ export async function saveFitProfile(form: FormData) {
   redirect("/jobs/profile?saved=1");
 }
 
+/** Customers can remove any entry from their fit record (but never edit what a tailor wrote). */
+export async function deleteFitEntry(form: FormData) {
+  const user = await requireUser("/jobs/profile");
+  await db.fitRecord.deleteMany({ where: { id: String(form.get("id")), customerId: user.id } });
+  redirect("/jobs/profile?removed=1#fit-record");
+}
+
 /** Opens an exclusive rebook up to other tailors (with the usual Plus head start). */
 export async function openJobToAll(form: FormData) {
   const user = await requireUser();

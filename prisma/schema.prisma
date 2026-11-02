@@ -82,6 +82,7 @@ model User {
   myTailors  MyTailor[]
   points     PointsEntry[]
   reports    ConductReport[]
+  fitRecords FitRecord[]
 }
 
 model Session {
@@ -145,6 +146,7 @@ model TailorProfile {
   requests Job[]      @relation("RequestedTailor")
   portfolio PortfolioPhoto[]
   reports   ConductReport[]
+  fitRecords FitRecord[]
 }
 
 // Club Plus portfolio. Public on the tailor's profile while they're on Plus.
@@ -264,6 +266,29 @@ model Booking {
   tailor   TailorProfile @relation(fields: [tailorId], references: [id], onDelete: Cascade)
   review   Review?
   reports  ConductReport[]
+  fit      FitRecord?
+}
+
+// The customer's fit record: one entry per booking, written by that booking's
+// tailor at the fitting. Belongs to the customer (they can delete it, not edit it)
+// and is shown to every tailor they book through tailor me. See src/lib/fit.ts.
+model FitRecord {
+  id           String   @id @default(cuid())
+  customerId   String
+  tailorId     String
+  bookingId    String   @unique
+  garment      String
+  // { inseam: 78.5, waist: 82, ... } in centimetres.
+  measurements Json
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  customer User          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tailor   TailorProfile @relation(fields: [tailorId], references: [id], onDelete: Cascade)
+  booking  Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, createdAt])
 }
 
 // Customer rewards: points earned on paid bookings, spent on booking-fee vouchers.

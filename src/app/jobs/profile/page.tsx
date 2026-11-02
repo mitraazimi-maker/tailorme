@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { saveFitProfile } from "@/app/actions/customer";
+import { deleteFitEntry, saveFitProfile } from "@/app/actions/customer";
+import { FitHistory } from "@/components/fit";
+import { fitRecordFor } from "@/lib/fit-records";
 import { requireUser } from "@/lib/auth";
 import { bookedTailorIds } from "@/lib/bookings";
 import { db } from "@/lib/db";
@@ -7,24 +9,47 @@ import { SUBURB_NAMES } from "@/lib/suburbs";
 
 export const metadata = { title: "Fit profile" };
 
-export default async function FitProfile({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
+export default async function FitProfile({ searchParams }: { searchParams: Promise<{ saved?: string; removed?: string }> }) {
   const user = await requireUser("/jobs/profile");
-  const { saved } = await searchParams;
-  const [mine, booked] = await Promise.all([
+  const { saved, removed } = await searchParams;
+  const [mine, booked, fit] = await Promise.all([
     db.myTailor.findMany({ where: { customerId: user.id }, include: { tailor: true }, orderBy: { createdAt: "desc" } }),
     bookedTailorIds(user.id),
+    fitRecordFor(user.id, 50),
   ]);
   return (
     <div className="wrap page">
       <div className="tabs"><Link href="/jobs">My jobs</Link><Link href="/jobs/profile" aria-current="page">Fit profile &amp; my tailors</Link></div>
       <div className="page-head"><h1>Your fit</h1></div>
       {saved && <p className="notice ok" style={{ marginBottom: 16 }}>Saved.</p>}
+      {removed && <p className="notice ok" style={{ marginBottom: 16 }}>Removed from your fit record.</p>}
+      <div className="panel stack" id="fit-record" style={{ marginBottom: 20 }}>
+        <div>
+          <h2>Your fit record</h2>
+          <p className="small muted" style={{ marginTop: 4 }}>
+            Measurements your tailors take at the fitting. Any tailor you book through tailor me starts from them, so you don’t have to explain your fit again. Only you and the tailors you book can see it.
+          </p>
+        </div>
+        {fit.length === 0 ? (
+          <p className="muted small">Nothing yet. Your tailor adds your measurements after your first fitting.</p>
+        ) : (
+          <FitHistory
+            entries={fit}
+            action={(e) => (
+              <form action={deleteFitEntry} style={{ marginTop: 8 }}>
+                <input type="hidden" name="id" value={e.id} />
+                <button className="link small" type="submit" aria-label={`Remove the ${e.garment} fit from ${e.tailorName}`}>Remove</button>
+              </form>
+            )}
+          />
+        )}
+      </div>
       <div className="detail-grid">
         <form className="panel stack" action={saveFitProfile}>
           <div className="field" style={{ marginTop: 0 }}>
-            <label htmlFor="fitNotes">Measurements and fit notes</label>
+            <label htmlFor="fitNotes">Your own notes</label>
             <textarea className="inp" id="fitNotes" name="fitNotes" defaultValue={user.fitNotes ?? ""} style={{ minHeight: 180 }} placeholder={"e.g. Inseam 78 cm (flat shoes), 80 cm (heels)\nPrefers trousers with a slight break\nSleeve 61 cm"} />
-            <span className="hint">Shared only with tailors you book through tailor me.</span>
+            <span className="hint">Anything your tailors should know. Shared only with tailors you book through tailor me.</span>
           </div>
           <div className="two">
             <div className="field" style={{ marginTop: 0 }}>
