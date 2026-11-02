@@ -4,7 +4,7 @@ import { Disclaimer, Flags, IntroNote, Stars } from "@/components/ui";
 import { getUser } from "@/lib/auth";
 import { BOOKING_FEE_LABEL, catName } from "@/lib/catalog";
 import { bookedTailorIds } from "@/lib/bookings";
-import { HOME_FITTING, PICKUP_NAME, pickupPriceLabel } from "@/lib/pickup";
+import { AT_HOME_LINE, AT_HOME_NAME, pickupPriceLabel } from "@/lib/pickup";
 import { db } from "@/lib/db";
 import { isClubMember } from "@/lib/rules";
 import { fabric, money } from "@/lib/fabric";
@@ -114,9 +114,10 @@ export default async function Profile({ params }: { params: Promise<{ slug: stri
           {t.openingHours && <p className="small muted">Hours: {t.openingHours}</p>}
           {t.offersPickup && (
             <div className="mytailor" style={{ flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
-              <b style={{ color: "var(--ink)" }}>{PICKUP_NAME} · {pickupPriceLabel(t.pickupFeeCents)}</b>
+              <span className="eyebrow" style={{ color: "var(--tape)" }}>Concierge</span>
+              <b style={{ color: "var(--ink)" }}>{AT_HOME_NAME} · {pickupPriceLabel(t.pickupFeeCents)}</b>
+              <span>{AT_HOME_LINE}</span>
               <span>Within {t.pickupRadiusKm} km of {t.suburb}{t.pickupNote ? ` · ${t.pickupNote}` : ""}.</span>
-              <span>{HOME_FITTING}</span>
               <span className="small">Arranged with and paid to the tailor.</span>
             </div>
           )}

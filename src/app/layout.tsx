@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({ subsets: ["latin"], weight: ["400", "500"], varia
 
 export const metadata: Metadata = {
   title: { default: "tailor me · Your own tailor, from $14", template: "%s · tailor me" },
-  description: "Sydney’s neighbourhood tailors for everyday alterations and repairs. Send a photo, get guide quotes from local tailors.",
+  description: "Sydney’s neighbourhood tailors for everyday alterations and repairs. Send a photo, get guide quotes, or have a tailor come to you for a fitting at home.",
 };
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
 

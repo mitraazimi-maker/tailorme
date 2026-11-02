@@ -152,7 +152,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
                         </div>
                         <div className="price">{money(q.priceCents)}</div>
                         {q.pickupFeeCents != null && (
-                          <p className="msg small">+ {pickupPriceLabel(q.pickupFeeCents)} for pickup, delivery &amp; home fitting, paid to the tailor</p>
+                          <p className="msg small">+ {pickupPriceLabel(q.pickupFeeCents)} for tailor me at home (visit, home fitting and delivery), paid to the tailor</p>
                         )}
                         {job.wantsPickup && q.pickupFeeCents == null && <p className="msg small">No pickup offered: you’d drop it off.</p>}
                         {q.message && <p className="msg">“{q.message}”</p>}
@@ -200,7 +200,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
             <dl className="kv" style={{ marginTop: 14 }}>
               <dt>Fitting</dt><dd>{job.fitting ?? "Tailor to advise"}</dd>
               <dt>Timing</dt><dd>{job.timing}</dd>
-              <dt>Pickup</dt><dd>{job.wantsPickup ? "Collect with home fitting, then deliver" : "I’ll drop it off"}</dd>
+              <dt>Pickup</dt><dd>{job.wantsPickup ? "tailor me at home: fitting at home, then delivered" : "I’ll drop it off"}</dd>
               <dt>Guide price</dt><dd className="num">${lo} – ${hi}</dd>
             </dl>
           </div>

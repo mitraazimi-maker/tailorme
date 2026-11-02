@@ -2,6 +2,7 @@ import Link from "next/link";
 import AutoSubmitForm from "@/components/AutoSubmitForm";
 import { TailorRow } from "@/components/ui";
 import { CATEGORIES, isCategory } from "@/lib/catalog";
+import { AT_HOME_NAME } from "@/lib/pickup";
 import { SUBURB_NAMES, findSuburb } from "@/lib/suburbs";
 import { searchTailors, type Search } from "@/lib/tailors";
 
@@ -48,7 +49,7 @@ export default async function Results({ searchParams }: { searchParams: Promise<
           </div>
           <div>
             <h4>Options</h4>
-            <label className="check"><input type="checkbox" name="pickup" value="1" defaultChecked={s.pickup} />Picks up &amp; delivers to {suburb}, with home fitting</label>
+            <label className="check"><input type="checkbox" name="pickup" value="1" defaultChecked={s.pickup} />{AT_HOME_NAME}: comes to {suburb} for a fitting</label>
             <label className="check"><input type="checkbox" name="mobile" value="1" defaultChecked={s.mobile} />Comes to me for fittings</label>
             <label className="check"><input type="checkbox" name="express" value="1" defaultChecked={s.express} />Same-day available</label>
           </div>

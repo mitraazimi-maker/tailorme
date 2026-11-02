@@ -60,7 +60,7 @@ export default async function TailorProfileEdit({ searchParams }: { searchParams
         </div>
         <fieldset className="panel stack" style={{ padding: 16, background: "var(--paper-2)", border: 0 }}>
           <label className="check" style={{ fontWeight: 600 }}>
-            <input type="checkbox" name="offersPickup" defaultChecked={tailor.offersPickup} />I pick up and deliver, with a free fitting at home
+            <input type="checkbox" name="offersPickup" defaultChecked={tailor.offersPickup} />Offer tailor me at home: I visit, fit at home (free) and deliver
           </label>
           <div className="two">
             <div className="field" style={{ marginTop: 0 }}>

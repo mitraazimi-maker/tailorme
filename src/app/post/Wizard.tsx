@@ -214,7 +214,7 @@ export default function Wizard({ user, defaultSuburb, tailor, rebook }: Props) {
           <label className="ack" htmlFor="wPickup">
             <input type="checkbox" id="wPickup" checked={wantsPickup} onChange={(e) => setWantsPickup(e.target.checked)} />
             <span>
-              <b>Collect it from me and bring it back</b>, with a free fitting at home when it’s collected: the tailor pins it on you before taking it away.
+              <b>tailor me at home:</b> have the tailor come to me, fit it at home and bring it back. The fitting is free when they collect: they pin it on you before taking it away.
               <span className="hint" style={{ display: "block" }}>Tailors who offer it add their own pickup price to their quote, paid to them.</span>
             </span>
           </label>
@@ -248,7 +248,7 @@ export default function Wizard({ user, defaultSuburb, tailor, rebook }: Props) {
               ["Work", work],
               ["Fitting", fitting ?? "Tailor to advise"],
               ["Timing", timing],
-              ["Pickup", wantsPickup ? "Collect with home fitting, then deliver" : "I’ll drop it off"],
+              ["Pickup", wantsPickup ? "tailor me at home: fitting at home, then delivered" : "I’ll drop it off"],
               ["Location", findSuburb(suburb) ?? suburb],
               ["Photos", `${photos.length} attached`],
               ["Contact", user ? `${user.firstName} · ${user.email}` : `${firstName} · ${email}`],

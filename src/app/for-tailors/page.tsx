@@ -12,6 +12,14 @@ export default function ForTailors() {
         <div className="step"><span className="n">Step 2</span><h3>Quote on local jobs</h3><p>Every job comes with photos. Reply with a guide price and a ready date. Confirm the final price once you see the garment.</p></div>
         <div className="step"><span className="n">Step 3</span><h3>Get booked</h3><p>The customer pays tailor me a booking fee to book you and gets your details. They pay you directly for the work. No commission.</p></div>
       </div>
+      <div className="panel" style={{ marginTop: 48 }}>
+        <div className="eyebrow" style={{ color: "var(--tape)" }}>Concierge · tailor me at home</div>
+        <h2 style={{ marginTop: 10 }}>Be the tailor who comes to them.</h2>
+        <p className="muted" style={{ marginTop: 10, maxWidth: "60ch" }}>
+          Offer home visits and customers can filter for you. You set your own visit price and area, fit them at home when you collect,
+          and bring the garment back pressed. The visit price is yours; customers pay you directly.
+        </p>
+      </div>
       <div className="standard" style={{ marginTop: 48 }}>
         <div><div className="eyebrow" style={{ color: "var(--tape)" }}>The tailor me standard</div><h2 style={{ marginTop: 12 }}>Four things Club members agree to.</h2><p>Kept short on purpose.</p></div>
         <ul className="std-list">

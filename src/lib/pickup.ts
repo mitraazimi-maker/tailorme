@@ -20,3 +20,8 @@ export const PICKUP_RADII_KM = [3, 5, 8, 12, 20];
 /** Every tailor who offers pickup includes a fitting at pickup only (decided 1 Nov 2026). */
 export const HOME_FITTING = "Free fitting at home when it’s collected: the tailor pins it on you before taking it away.";
 export const PICKUP_NAME = "Pickup, delivery & home fitting";
+
+// "tailor me at home" is the concierge name for a tailor's pickup service. Only some
+// tailors offer it, so copy always says "tailors who visit", never that every tailor does.
+export const AT_HOME_NAME = "tailor me at home";
+export const AT_HOME_LINE = "Your tailor comes to you, fits you at home (free when they collect), and brings it back pressed.";

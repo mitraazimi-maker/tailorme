@@ -6,6 +6,7 @@ import { CATEGORIES, PRICE_GUIDE, QUICK_JOBS } from "@/lib/catalog";
 import { fabric } from "@/lib/fabric";
 import { getUser } from "@/lib/auth";
 import { searchTailors } from "@/lib/tailors";
+import { AT_HOME_NAME } from "@/lib/pickup";
 import { findSuburb } from "@/lib/suburbs";
 
 // Illustrative only: not attributed to any real tailor.
@@ -27,7 +28,7 @@ export default async function Home() {
           <div>
             <div className="eyebrow">Sydney’s neighbourhood tailors</div>
             <h1 style={{ marginTop: 14 }}>Your own tailor, <span className="hl">from $14.</span></h1>
-            <p className="lede">The hem, the zip, the jacket that never sat right. Send a photo and a local tailor takes care of it, usually with a quote inside the hour.</p>
+            <p className="lede">The hem, the zip, the jacket that never sat right. Send a photo and a local tailor takes care of it. Or have one come to you for a fitting at home.</p>
             <form className="search" action="/tailors">
               <label htmlFor="q"><span>What needs doing?</span><input id="q" name="q" placeholder="e.g. hem work trousers" autoComplete="off" /></label>
               <label htmlFor="sub"><span>Suburb</span><input id="sub" name="suburb" defaultValue={suburb} autoComplete="off" /></label>
@@ -65,7 +66,27 @@ export default async function Home() {
           <div className="steps">
             <div className="step"><span className="n">Step 1</span><h3>Describe the job</h3><p>Pick the garment and the work, add at least one photo and your timeline. Takes about two minutes.</p></div>
             <div className="step"><span className="n">Step 2</span><h3>Compare quotes</h3><p>Up to three independent tailors reply with a guide price and a ready date. The final price is confirmed once they inspect the garment.</p></div>
-            <div className="step"><span className="n">Step 3</span><h3>Drop off or book a fitting</h3><p>Accept the quote you like and pay a small booking fee: 15% of the quote, minimum $5. Visit the studio or have them come to you. You deal with the tailor directly from there.</p></div>
+            <div className="step"><span className="n">Step 3</span><h3>Drop it off, or have them come to you</h3><p>Accept the quote you like and pay a small booking fee: 15% of the quote, minimum $5. Visit the studio, or choose a tailor who visits: they fit you at home and bring it back. You deal with the tailor directly from there.</p></div>
+          </div>
+        </div>
+      </section>
+      <section className="block" id="at-home" style={{ paddingTop: 0 }}>
+        <div className="wrap">
+          <div className="standard">
+            <div>
+              <div className="eyebrow" style={{ color: "var(--tape)" }}>Concierge · {AT_HOME_NAME}</div>
+              <h2 style={{ marginTop: 12 }}>Your tailor, <span className="serif-i" style={{ color: "var(--tape)" }}>at your door.</span></h2>
+              <p>The way a private tailor works: no trip to the shopping centre, no queue at the counter. Tailors who visit come to you, fit you at home, and bring it back pressed.</p>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 22 }}>
+                <Link className="btn btn-primary" href={`/tailors?pickup=1&suburb=${encodeURIComponent(suburb)}`}>Find a tailor who visits</Link>
+              </div>
+              <p className="small" style={{ marginTop: 14 }}>Offered by tailors who choose to, at their own visit price, paid to them.</p>
+            </div>
+            <ul className="std-list">
+              <li><b>They come to you</b><span>at a time that suits, within their area.</span></li>
+              <li><b>A fitting in your own home</b><span>they pin it on you, in your shoes, in your light. Free with the visit.</span></li>
+              <li><b>Back to your door, pressed</b><span>ready to wear, with your fit saved for next time.</span></li>
+            </ul>
           </div>
         </div>
       </section>
