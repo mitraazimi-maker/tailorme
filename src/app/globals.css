@@ -298,7 +298,8 @@ textarea.inp{min-height:110px;resize:vertical}
 
 /* ---------- app additions (beyond the prototype) ---------- */
 a{color:inherit;text-decoration:none}
-a.link,.prose a{text-decoration:underline;text-underline-offset:3px}
+a.link,.link,.prose a{text-decoration:underline;text-underline-offset:3px}
+button.link{cursor:pointer;color:inherit;font:inherit}
 .btn[disabled]{opacity:.5;cursor:not-allowed}
 .nav-links form{display:contents}
 .nav-links a:not(.btn),.nav-links .navbtn{background:none;border:0;padding:8px 12px;border-radius:999px;font-weight:500;color:var(--ink-2)}
@@ -358,3 +359,6 @@ a.link,.prose a{text-decoration:underline;text-underline-offset:3px}
 .table{width:100%;border-collapse:collapse;font-size:14px}
 .table th,.table td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
 .table th{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);font-weight:400}
+
+/* Keep the job form heading clear of the sticky header when the form scrolls itself. */
+.wiz{scroll-margin-top:84px}

@@ -17,7 +17,7 @@ type Props = {
   rebook: boolean;
 };
 
-export default function Wizard({ user, defaultSuburb, tailor, rebook }: Props) {
+export default function Wizard({ user: initialUser, defaultSuburb, tailor, rebook }: Props) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [garment, setGarment] = useState<string | null>(null);
@@ -31,6 +31,10 @@ export default function Wizard({ user, defaultSuburb, tailor, rebook }: Props) {
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // Logging in happens inside the form (no page change), so nothing typed or uploaded is lost.
+  const [user, setUser] = useState(initialUser);
+  const [authMode, setAuthMode] = useState<"signup" | "login">("signup");
+  const [postAfterLogin, setPostAfterLogin] = useState(false);
   const [ack, setAck] = useState(false);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
@@ -65,7 +69,11 @@ export default function Wizard({ user, defaultSuburb, tailor, rebook }: Props) {
           : "Describe the job in a sentence or two (fabric and measurement help).",
     ],
     3: [!!timing && !!findSuburb(suburb), !timing ? "Choose a timeframe." : "Choose your suburb from the list."],
-    4: [!!user || (!!firstName.trim() && /^\S+@\S+\.\S+$/.test(email) && password.length >= 8), "Enter your first name, a valid email and a password of at least 8 characters."],
+    4: user
+      ? [true, ""]
+      : authMode === "login"
+        ? [false, "Log in to continue, or create a new account instead."]
+        : [!!firstName.trim() && /^\S+@\S+\.\S+$/.test(email) && password.length >= 8, "Enter your first name, a valid email and a password of at least 8 characters."],
     5: [ack, "Tick the box to confirm you understand how quotes and bookings work."],
   };
 
@@ -78,6 +86,38 @@ export default function Wizard({ user, defaultSuburb, tailor, rebook }: Props) {
     const [ok, msg] = checks[step];
     if (!ok) return setErr(msg);
     if (step < 5) return go(step + 1);
+    await post(user);
+  }
+
+  async function logIn() {
+    setErr("");
+    setBusy(true);
+    try {
+      const res = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErr(body.error ?? "Couldn’t log you in. Please try again.");
+        setBusy(false);
+        return;
+      }
+      const account = { firstName: body.firstName as string, email: body.email as string };
+      setUser(account);
+      setPassword("");
+      router.refresh(); // header shows you as logged in
+      if (postAfterLogin) {
+        setPostAfterLogin(false);
+        await post(account);
+      } else {
+        setBusy(false);
+        go(5);
+      }
+    } catch {
+      setErr("Couldn’t reach tailor me. Check your connection and try again.");
+      setBusy(false);
+    }
+  }
+
+  async function post(account: { firstName: string; email: string } | null) {
     setBusy(true);
     const fd = new FormData();
     fd.set("garment", garment!);
@@ -90,7 +130,7 @@ export default function Wizard({ user, defaultSuburb, tailor, rebook }: Props) {
     fd.set("ack", "on");
     if (tailor) fd.set("tailor", tailor.slug);
     if (rebook) fd.set("rebook", "1");
-    if (!user) {
+    if (!account) {
       fd.set("firstName", firstName);
       fd.set("email", email);
       fd.set("password", password);
@@ -99,6 +139,15 @@ export default function Wizard({ user, defaultSuburb, tailor, rebook }: Props) {
     try {
       const res = await fetch("/api/jobs", { method: "POST", body: fd });
       const body = await res.json().catch(() => ({}));
+      if (res.status === 409 && !account) {
+        // The email already has an account: log in right here, then the job posts with everything kept.
+        setAuthMode("login");
+        setPassword("");
+        setPostAfterLogin(true);
+        setBusy(false);
+        go(4);
+        return;
+      }
       if (!res.ok) {
         setErr(body.error ?? "Something went wrong. Please try again.");
         setBusy(false);
@@ -226,9 +275,21 @@ export default function Wizard({ user, defaultSuburb, tailor, rebook }: Props) {
           <h1>Where should quotes go?</h1>
           {user ? (
             <p className="sub">Posting as <b>{user.firstName}</b> ({user.email}). We’ll email you when quotes arrive.</p>
+          ) : authMode === "login" ? (
+            <>
+              {postAfterLogin && (
+                <p className="notice" style={{ marginTop: 12 }}>
+                  There’s already an account for <b>{email}</b>. Enter your password and we’ll post your job. Nothing you’ve entered is lost.
+                </p>
+              )}
+              <p className="sub">Log in to post this job. Everything you’ve entered stays here. New to tailor me? <button type="button" className="link" style={{ background: "none", border: 0, padding: 0 }} onClick={() => { setAuthMode("signup"); setPostAfterLogin(false); setErr(""); }}>Create an account</button></p>
+              <div className="field"><label htmlFor="wLoginEmail">Email</label><input className="inp" id="wLoginEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></div>
+              <div className="field"><label htmlFor="wLoginPass">Password</label><input className="inp" id="wLoginPass" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); logIn(); } }} /></div>
+              <button type="button" className="btn btn-ink" style={{ marginTop: 18 }} onClick={logIn} disabled={busy}>{busy ? "Logging in…" : postAfterLogin ? "Log in and post my job" : "Log in and continue"}</button>
+            </>
           ) : (
             <>
-              <p className="sub">Create an account to see and compare your quotes. Tailors see your first name and suburb only. Already have one? <Link className="link" href="/login?next=/post">Log in</Link></p>
+              <p className="sub">Create an account to see and compare your quotes. Tailors see your first name and suburb only. Already have an account? <button type="button" className="link" style={{ background: "none", border: 0, padding: 0 }} onClick={() => { setAuthMode("login"); setErr(""); }}>Log in here</button></p>
               <div className="two">
                 <div className="field"><label htmlFor="wName">First name</label><input className="inp" id="wName" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" /></div>
                 <div className="field"><label htmlFor="wEmail">Email</label><input className="inp" id="wEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></div>
@@ -276,9 +337,12 @@ export default function Wizard({ user, defaultSuburb, tailor, rebook }: Props) {
         ) : (
           <button type="button" className="btn btn-ghost" onClick={() => go(step - 1)} disabled={busy}>Back</button>
         )}
-        <button type="button" className={`btn ${step === 5 ? "btn-primary btn-brand" : "btn-ink"}`} onClick={next} disabled={busy} aria-label={step === 5 ? "Tailor me: post this job" : undefined}>
-          {step === 5 ? (busy ? "Posting…" : <>tailor <i>me</i></>) : "Continue"}
-        </button>
+        {/* While logging in on step 4, the login button is the way forward. */}
+        {!(step === 4 && !user && authMode === "login") && (
+          <button type="button" className={`btn ${step === 5 ? "btn-primary btn-brand" : "btn-ink"}`} onClick={next} disabled={busy} aria-label={step === 5 ? "Tailor me: post this job" : undefined}>
+            {step === 5 ? (busy ? "Posting…" : <>tailor <i>me</i></>) : "Continue"}
+          </button>
+        )}
       </div>
     </div>
   );

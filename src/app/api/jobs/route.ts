@@ -62,7 +62,7 @@ export async function POST(req: Request) {
     const nc = NewCustomer.safeParse(fields);
     if (!nc.success) return bad(nc.error.issues[0].message);
     if (await db.user.findUnique({ where: { email: nc.data.email } }))
-      return bad("There’s already an account with that email. Log in first, and your job will be kept.", 409);
+      return bad("There’s already an account with that email. Log in to post this job.", 409);
     const created = await db.user.create({
       data: {
         firstName: nc.data.firstName,
