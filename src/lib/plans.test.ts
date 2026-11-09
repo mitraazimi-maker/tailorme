@@ -5,6 +5,7 @@ it("prices and allowances are as decided", () => {
   expect([PLANS.STARTER.priceCents, PLANS.STARTER.jobs]).toEqual([2900, 5]);
   expect([PLANS.PRO.priceCents, PLANS.PRO.jobs]).toEqual([5900, 15]);
   expect([PLANS.BUSY.priceCents, PLANS.BUSY.jobs]).toEqual([14900, 40]);
+  expect([PLANS.STUDIO.priceCents, PLANS.STUDIO.jobs]).toEqual([21900, 80]);
   expect([PLANS.UNLIMITED.priceCents, PLANS.UNLIMITED.jobs]).toEqual([29900, null]);
 });
 

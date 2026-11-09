@@ -37,7 +37,7 @@ export const headStartEnds = (createdAt: Date) => new Date(createdAt.getTime() +
 
 /**
  * When a tailor can first see a job. Unlimited members and a tailor the customer asked for see it at once;
- * Starter, Pro and Busy members see it at openToAllAt (straight away when no Unlimited member matched).
+ * members on the other tiers see it at openToAllAt (straight away when no Unlimited member matched).
  */
 export function visibleFrom(tailor: TailorLike, job: Pick<JobLike, "createdAt" | "requestedTailorId" | "openToAllAt">): Date {
   if (isUnlimited(tailor) || job.requestedTailorId === tailor.id) return job.createdAt;

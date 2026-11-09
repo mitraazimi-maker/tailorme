@@ -31,11 +31,12 @@ export function stripe(): Stripe {
 
 const appUrl = () => (process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "");
 
-// Stripe price for each Club tier: Starter $29, Pro $59, Busy $149, Unlimited $299 a month.
+// Stripe price for each Club tier: Starter $29, Pro $59, Busy $149, Studio $219, Unlimited $299 a month.
 const PRICE_ENV: Record<ClubTier, string> = {
   STARTER: "STRIPE_STARTER_PRICE_ID",
   PRO: "STRIPE_PRO_PRICE_ID",
   BUSY: "STRIPE_BUSY_PRICE_ID",
+  STUDIO: "STRIPE_STUDIO_PRICE_ID",
   UNLIMITED: "STRIPE_UNLIMITED_PRICE_ID",
 };
 

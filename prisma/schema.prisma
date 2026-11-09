@@ -33,6 +33,7 @@ enum ClubTier {
   STARTER
   PRO
   BUSY
+  STUDIO
   UNLIMITED
 }
 

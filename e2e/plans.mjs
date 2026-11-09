@@ -72,7 +72,7 @@ check(await sendQuote(k, job2, 30), "can quote again after upgrading", "still bl
 // --- Tailor-facing pricing ---
 const anon = await (await (await import("./lib.mjs")).browser.newContext({ viewport: phone })).newPage();
 await anon.goto(BASE + "/for-tailors");
-for (const t of ["$29", "$59", "$149", "$299", "Pay only for work you win"]) check(await shows(anon, t), `for-tailors shows ${t}`, `for-tailors missing ${t}`);
+for (const t of ["$29", "$59", "$149", "$219", "$299", "Pay only for work you win"]) check(await shows(anon, t), `for-tailors shows ${t}`, `for-tailors missing ${t}`);
 await anon.screenshot({ path: SHOTS + "plans-for-tailors-400.png", fullPage: true });
 
 const admin = await login("admin@example.com");

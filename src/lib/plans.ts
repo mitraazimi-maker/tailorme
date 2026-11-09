@@ -1,4 +1,4 @@
-// tailor me Club tiers (decided 9 Nov 2026; Busy added and Unlimited raised to $299 the same day). Customers pay nothing; tailors pay a
+// tailor me Club tiers (decided 9 Nov 2026; Busy added and Unlimited raised to $299 the same day; Studio, 80 jobs at $219, added to soften the step to Unlimited). Customers pay nothing; tailors pay a
 // monthly membership that includes a number of jobs won. A job is "used" only
 // when a customer books the tailor (never for a quote that loses), and rebooks
 // from a customer who booked them before are always free. Unused jobs roll over
@@ -11,6 +11,7 @@ export const PLANS: Record<ClubTier, Plan> = {
   STARTER: { tier: "STARTER", name: "Starter", priceCents: 2900, jobs: 5, perks: [] },
   PRO: { tier: "PRO", name: "Pro", priceCents: 5900, jobs: 15, perks: [] },
   BUSY: { tier: "BUSY", name: "Busy", priceCents: 14900, jobs: 40, perks: [] },
+  STUDIO: { tier: "STUDIO", name: "Studio", priceCents: 21900, jobs: 80, perks: [] },
   UNLIMITED: {
     tier: "UNLIMITED",
     name: "Unlimited",
@@ -19,7 +20,7 @@ export const PLANS: Record<ClubTier, Plan> = {
     perks: ["Featured first in search (labelled as paid placement)", "15-minute head start on new matching jobs", "Portfolio gallery, up to 12 photos"],
   },
 };
-export const TIERS: ClubTier[] = ["STARTER", "PRO", "BUSY", "UNLIMITED"];
+export const TIERS: ClubTier[] = ["STARTER", "PRO", "BUSY", "STUDIO", "UNLIMITED"];
 
 export const planPriceLabel = (tier: ClubTier) => `$${PLANS[tier].priceCents / 100}/month`;
 export const planJobsLabel = (tier: ClubTier) => {
