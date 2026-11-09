@@ -1,9 +1,9 @@
 import type Stripe from "stripe";
-import { clubStatusFromStripe, confirmBooking } from "@/lib/bookings";
+import { clubStatusFromStripe } from "@/lib/bookings";
 import { db } from "@/lib/db";
 import { stripe, tierForPriceId } from "@/lib/payments";
 
-// Stripe webhook. Configure the endpoint for:
+// Stripe webhook (Club subscriptions only; booking is free). Configure the endpoint for:
 //   checkout.session.completed, customer.subscription.created,
 //   customer.subscription.updated, customer.subscription.deleted
 export async function POST(req: Request) {
@@ -19,7 +19,6 @@ export async function POST(req: Request) {
   switch (event.type) {
     case "checkout.session.completed": {
       const s = event.data.object;
-      if (s.metadata?.kind === "booking" && s.payment_status === "paid") await confirmBooking(s.metadata.bookingId);
       if (s.metadata?.kind === "club" && typeof s.subscription === "string") {
         const sub = await stripe().subscriptions.retrieve(s.subscription);
         await syncSubscription(sub, s.metadata.tailorId);
@@ -50,4 +49,6 @@ async function syncSubscription(sub: Stripe.Subscription, tailorId: string | und
       clubRenewsAt: periodEnd ? new Date(periodEnd * 1000) : null,
     },
   });
+  // First time active: start the clock for rolling over unused jobs.
+  if (clubStatusFromStripe(sub.status) === "ACTIVE") await db.tailorProfile.updateMany({ where: { ...where, clubSince: null }, data: { clubSince: new Date() } });
 }

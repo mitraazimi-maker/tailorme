@@ -14,7 +14,7 @@ describe("canRecordFit", () => {
     expect(canRecordFit("t1", { tailorId: "t1", status: "CONFIRMED" }).ok).toBe(true);
     expect(canRecordFit("t1", { tailorId: "t1", status: "COMPLETED" }).ok).toBe(true);
   });
-  it("not before payment", () => expect(canRecordFit("t1", { tailorId: "t1", status: "PENDING_PAYMENT" }).ok).toBe(false));
+  it("not on a cancelled booking", () => expect(canRecordFit("t1", { tailorId: "t1", status: "CANCELLED" }).ok).toBe(false));
   it("not another tailor", () => expect(canRecordFit("t2", { tailorId: "t1", status: "CONFIRMED" }).ok).toBe(false));
   it("not without a booking", () => expect(canRecordFit("t1", null).ok).toBe(false));
 });

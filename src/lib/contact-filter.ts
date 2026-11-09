@@ -1,7 +1,7 @@
-// Keeps contact details out of anything shown before a booking is paid
-// (quotes, job descriptions, public profiles), so nobody can be reached
-// around the booking fee. Contact details are shared automatically once a
-// booking is paid. Pure and unit tested.
+// Keeps contact details out of anything shown before a booking is made
+// (quotes, job descriptions, public profiles), so jobs aren't taken around
+// tailor me before the customer books. Contact details are shared automatically
+// once the customer books. Pure and unit tested.
 
 const PATTERNS: [RegExp, string][] = [
   [/[\w.+-]+@[\w-]+\.[\w.-]+/i, "an email address"],

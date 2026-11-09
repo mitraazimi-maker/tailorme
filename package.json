@@ -12,7 +12,8 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "e2e": "for f in plans post fit rules; do npm run --silent db:seed >/dev/null && node e2e/$f.mjs || exit 1; done"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

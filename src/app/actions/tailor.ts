@@ -8,10 +8,13 @@ import { MAX_PORTFOLIO_PHOTOS, isCategory } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { notify } from "@/lib/notify";
 import { billingPortalUrl, changeClubTier, clubCheckoutUrl, paymentsMode } from "@/lib/payments";
-import { canQuote, isClubMember, isPlus, isSuspended } from "@/lib/rules";
+import { canQuote, isClubMember, isUnlimited, isSuspended } from "@/lib/rules";
 import { MAX_PHOTO_BYTES, savePhoto, sniffImage } from "@/lib/storage";
 import { contactRefusal, findContactDetails } from "@/lib/contact-filter";
 import { findSuburb } from "@/lib/suburbs";
+import { TIERS } from "@/lib/plans";
+import { creditsForTailor } from "@/lib/credits";
+import type { ClubTier } from "@prisma/client";
 import { canRecordFit, parseFit } from "@/lib/fit";
 
 const back = (path: string, error: string): never => redirect(`${path}?error=${encodeURIComponent(error)}`);
@@ -130,6 +133,7 @@ export async function submitQuote(form: FormData) {
 
   const job = await db.job.findUnique({ where: { id: jobId }, include: { customer: { select: { email: true } } } });
   if (!job) redirect("/tailor/jobs");
+  const credits = await creditsForTailor(tailor);
   try {
     await db.$transaction(
       async (tx) => {
@@ -137,7 +141,7 @@ export async function submitQuote(form: FormData) {
           tx.quote.count({ where: { jobId, status: { in: ["PENDING", "ACCEPTED"] } } }),
           tx.quote.findUnique({ where: { jobId_tailorId: { jobId, tailorId: tailor.id } } }),
         ]);
-        const verdict = canQuote(tailor, job, count, !!mine);
+        const verdict = canQuote(tailor, job, count, !!mine, credits);
         if (!verdict.ok) throw new QuoteRefused(verdict.reason);
         // Pickup is only quoted when the customer asked for it and the tailor offers it.
         const pickupFeeCents =
@@ -193,7 +197,10 @@ export async function recordFit(form: FormData) {
   redirect(`${path}?fit=1#fit`);
 }
 
-const tierFrom = (form: FormData) => (form.get("tier") === "PLUS" ? "PLUS" : "CLUB") as "PLUS" | "CLUB";
+const tierFrom = (form: FormData): ClubTier => {
+  const t = String(form.get("tier")).toUpperCase() as ClubTier;
+  return TIERS.includes(t) ? t : "STARTER";
+};
 
 export async function joinClub(form: FormData) {
   const { user, tailor } = await requireTailor("/tailor");
@@ -201,7 +208,7 @@ export async function joinClub(form: FormData) {
   redirect(await clubCheckoutUrl({ tailorId: tailor.id, email: user.email, stripeCustomerId: tailor.stripeCustomerId, tier: tierFrom(form) }));
 }
 
-/** Upgrade to Club Plus or move back to Club, for a tailor who's already a member. */
+/** Move between Starter, Pro and Unlimited, for a tailor who's already a member. Takes effect at once. */
 export async function changeTier(form: FormData) {
   const { tailor } = await requireTailor("/tailor");
   const tier = tierFrom(form);
@@ -217,7 +224,7 @@ export async function changeTier(form: FormData) {
 
 export async function addPortfolioPhotos(form: FormData) {
   const { tailor } = await requireTailor("/tailor/profile");
-  if (!isPlus(tailor)) back("/tailor/profile", "The portfolio is part of Club Plus.");
+  if (!isUnlimited(tailor)) back("/tailor/profile", "The portfolio is part of Unlimited.");
   const existing = await db.portfolioPhoto.count({ where: { tailorId: tailor.id } });
   const files = form.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0);
   if (!files.length) back("/tailor/profile", "Choose at least one photo.");

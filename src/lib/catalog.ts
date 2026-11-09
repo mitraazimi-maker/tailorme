@@ -9,26 +9,9 @@ export const INTRO =
 export const ACKNOWLEDGEMENT =
   "I understand quotes are a guide only and the final price is confirmed after the tailor inspects my garment. I understand the work and payment are arranged directly with the tailor, not with tailor me.";
 
-// Customer booking fee: 15% of the accepted guide quote, never less than $5.
-export const BOOKING_FEE_RATE = 0.15;
-export const BOOKING_FEE_MIN_CENTS = 500;
-export const BOOKING_FEE_LABEL = "15% of the quote you accept, including any pickup (minimum $5)";
-/** Rebooking a tailor you've already booked through tailor me: a flat fee, so there's no reason to go around us. */
-export const REPEAT_BOOKING_FEE_CENTS = 500;
-export const REPEAT_FEE_LABEL = "$5, because you’ve booked them through tailor me before";
-/**
- * The booking fee for a quote: 15% of the work plus any pickup the tailor quoted (min $5),
- * or the flat repeat fee for a rebook. The pickup price itself is still paid to the tailor.
- */
-export const quoteBookingFeeCents = (q: { priceCents: number; pickupFeeCents?: number | null }, repeat = false) =>
-  bookingFeeCents(q.priceCents + (q.pickupFeeCents ?? 0), repeat);
-
-export const bookingFeeCents = (quoteCents: number, repeat = false) =>
-  repeat ? REPEAT_BOOKING_FEE_CENTS : Math.max(BOOKING_FEE_MIN_CENTS, Math.round(quoteCents * BOOKING_FEE_RATE));
-
-export const CLUB_PRICE_LABEL = "$10/month";
-export const PLUS_PRICE_LABEL = "$29/month";
-/** Club Plus members see new jobs this long before standard Club members. */
+// Booking is free for customers (decided 9 Nov 2026). Tailors pay by Club tier: src/lib/plans.ts.
+export const FREE_FOR_CUSTOMERS = "Free to post and free to book. You pay your tailor for the work.";
+/** Unlimited members see new jobs this long before Starter and Pro members. */
 export const HEAD_START_MINUTES = 15;
 export const MAX_PORTFOLIO_PHOTOS = 12;
 /** Penalty for an upheld report of arranging work outside tailor me. */

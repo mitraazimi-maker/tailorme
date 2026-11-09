@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { canAcceptQuote, canQuote, canReview, canTailorSeeJob, contactShared, isClubMember, isPlus } from "./rules";
+import { canAcceptQuote, canQuote, canReview, canTailorSeeJob, contactShared, isClubMember, isUnlimited } from "./rules";
 
-const tailor = { id: "t1", userId: "u-t1", clubStatus: "ACTIVE" as const, clubTier: "CLUB" as const };
-const plus = { ...tailor, id: "t-plus", clubTier: "PLUS" as const };
+const tailor = { id: "t1", userId: "u-t1", clubStatus: "ACTIVE" as const, clubTier: "STARTER" as const };
+const plus = { ...tailor, id: "t-plus", clubTier: "UNLIMITED" as const };
 const lapsed = { ...tailor, clubStatus: "CANCELED" as const };
-// Posted an hour ago, so the Plus head start has passed.
+// Posted an hour ago, so the Unlimited head start has passed.
 const job = { id: "j1", customerId: "u-c1", status: "OPEN" as const, createdAt: new Date(Date.now() - 3600_000) };
 
 describe("canQuote", () => {
@@ -33,25 +33,25 @@ describe("canAcceptQuote", () => {
 });
 
 describe("canReview (rule 6)", () => {
-  const paid = { customerId: "u-c1", status: "CONFIRMED" as const, paidAt: new Date() };
+  const paid = { customerId: "u-c1", status: "CONFIRMED" as const };
   it("allows the paying customer once", () => {
     expect(canReview("u-c1", paid, false).ok).toBe(true);
     expect(canReview("u-c1", paid, true).ok).toBe(false);
   });
   it("blocks anyone else", () => expect(canReview("u-x", paid, false).ok).toBe(false));
-  it("blocks unpaid bookings", () => expect(canReview("u-c1", { ...paid, status: "PENDING_PAYMENT", paidAt: null }, false).ok).toBe(false));
+  it("blocks cancelled bookings", () => expect(canReview("u-c1", { ...paid, status: "CANCELLED" }, false).ok).toBe(false));
 });
 
 it("contact details are shared only after payment", () => {
-  expect(contactShared({ status: "PENDING_PAYMENT" })).toBe(false);
+  expect(contactShared({ status: "CANCELLED" })).toBe(false);
   expect(contactShared({ status: "CONFIRMED" })).toBe(true);
   expect(contactShared(null)).toBe(false);
 });
 
-describe("Club Plus head start", () => {
+describe("Unlimited head start", () => {
   const fresh = { ...job, createdAt: new Date() };
   const later = new Date(Date.now() + 16 * 60_000);
-  it("Plus members can see and quote a brand-new job", () => {
+  it("Unlimited members can see and quote a brand-new job", () => {
     expect(canTailorSeeJob(plus, fresh, null).ok).toBe(true);
     expect(canQuote(plus, fresh, 0, false).ok).toBe(true);
   });
@@ -61,22 +61,22 @@ describe("Club Plus head start", () => {
     expect(!v.ok && v.reason).toMatch(/15 min/);
     expect(canQuote(tailor, fresh, 0, false).ok).toBe(false);
     expect(canTailorSeeJob(tailor, fresh, null, later).ok).toBe(true);
-    expect(canQuote(tailor, fresh, 0, false, later).ok).toBe(true);
+    expect(canQuote(tailor, fresh, 0, false, null, later).ok).toBe(true);
   });
   it("a tailor the customer asked for skips the wait", () =>
     expect(canTailorSeeJob(tailor, { ...fresh, requestedTailorId: "t1" }, null).ok).toBe(true));
-  it("Plus perks need an active membership", () => {
-    expect(isPlus(plus)).toBe(true);
-    expect(isPlus({ ...plus, clubStatus: "PAST_DUE" })).toBe(false);
-    expect(isPlus(tailor)).toBe(false);
+  it("Unlimited perks need an active membership", () => {
+    expect(isUnlimited(plus)).toBe(true);
+    expect(isUnlimited({ ...plus, clubStatus: "PAST_DUE" })).toBe(false);
+    expect(isUnlimited(tailor)).toBe(false);
   });
 });
 
-describe("head start only when a Plus member matches", () => {
+describe("head start only when an Unlimited member matches", () => {
   const fresh = { ...job, createdAt: new Date() };
-  it("no Plus match: standard members see the job straight away", () =>
+  it("no Unlimited match: Starter/Pro members see the job straight away", () =>
     expect(canTailorSeeJob(tailor, { ...fresh, openToAllAt: fresh.createdAt }, null).ok).toBe(true));
-  it("Plus match: standard members wait until openToAllAt", () =>
+  it("Unlimited match: Starter/Pro members wait until openToAllAt", () =>
     expect(canTailorSeeJob(tailor, { ...fresh, openToAllAt: new Date(Date.now() + 15 * 60_000) }, null).ok).toBe(false));
 });
 
@@ -86,7 +86,7 @@ describe("exclusive rebooks", () => {
     expect(canTailorSeeJob(tailor, rebook, null).ok).toBe(true);
     expect(canQuote(tailor, rebook, 0, false).ok).toBe(true);
   });
-  it("other tailors, even Plus, can't", () => {
+  it("other tailors, even Unlimited, can't", () => {
     expect(canTailorSeeJob(plus, rebook, null).ok).toBe(false);
     expect(canQuote(plus, rebook, 0, false).ok).toBe(false);
   });
@@ -97,7 +97,7 @@ describe("suspension", () => {
   const suspended = { ...plus, suspendedUntil: new Date(Date.now() + 864e5) };
   it("a suspended tailor isn't a member and can't quote or see jobs", () => {
     expect(isClubMember(suspended)).toBe(false);
-    expect(isPlus(suspended)).toBe(false);
+    expect(isUnlimited(suspended)).toBe(false);
     const v = canQuote(suspended, job, 0, false);
     expect(!v.ok && v.reason).toMatch(/suspended/);
     expect(canTailorSeeJob(suspended, job, null).ok).toBe(false);
@@ -106,4 +106,18 @@ describe("suspension", () => {
     expect(isClubMember({ ...plus, suspendedUntil: new Date(Date.now() - 1000) })).toBe(true));
   it("a suspended tailor keeps access to jobs they're already booked on", () =>
     expect(canTailorSeeJob(suspended, { ...job, status: "BOOKED" }, suspended.id).ok).toBe(true));
+});
+
+describe("monthly jobs", () => {
+  const out = { unlimited: false as const, allowance: 5, carried: 0, used: 5, left: 0 };
+  const some = { ...out, used: 4, left: 1 };
+  it("quotes while jobs are left", () => expect(canQuote(tailor, job, 0, false, some).ok).toBe(true));
+  it("blocks new quotes when they're used up, and says how to fix it", () => {
+    const v = canQuote(tailor, job, 0, false, out);
+    expect(v.ok).toBe(false);
+    expect(!v.ok && v.reason).toMatch(/Upgrade your plan/);
+  });
+  it("a rebook from their own customer is always free", () =>
+    expect(canQuote(tailor, { ...job, exclusive: true, requestedTailorId: tailor.id }, 0, false, out).ok).toBe(true));
+  it("Unlimited never runs out", () => expect(canQuote(plus, job, 0, false, { unlimited: true }).ok).toBe(true));
 });

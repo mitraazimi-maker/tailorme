@@ -5,11 +5,8 @@ import { z } from "zod";
 import { alertOnPost } from "@/lib/alerts";
 import { requireUser } from "@/lib/auth";
 import { notify } from "@/lib/notify";
-import { bookedTailorIds, confirmBooking, spendablePoints } from "@/lib/bookings";
-import { voucherFor } from "@/lib/rewards";
-import { quoteBookingFeeCents } from "@/lib/catalog";
+import { bookQuote, bookedTailorIds } from "@/lib/bookings";
 import { db } from "@/lib/db";
-import { bookingCheckoutUrl } from "@/lib/payments";
 import { canAcceptQuote, canReview } from "@/lib/rules";
 import { findSuburb } from "@/lib/suburbs";
 
@@ -23,43 +20,18 @@ export async function toggleMyTailor(form: FormData) {
   revalidatePath(`/tailors/${slug}`);
 }
 
-/** Accepting a quote creates a booking and sends the customer to pay the booking fee (15% of the quote, min $5). */
+/** Accepting a quote books the tailor. Free for the customer; contact details are shared straight away. */
 export async function acceptQuote(form: FormData) {
   const quoteId = String(form.get("quoteId"));
-  const quote = await db.quote.findUnique({ where: { id: quoteId }, include: { job: true, tailor: true } });
+  const quote = await db.quote.findUnique({ where: { id: quoteId }, include: { job: true } });
   if (!quote) redirect("/jobs");
   const user = await requireUser(`/jobs/${quote.jobId}`);
   const verdict = canAcceptQuote(user.id, quote.job, quote);
   if (!verdict.ok) redirect(`/jobs/${quote.jobId}?error=${encodeURIComponent(verdict.reason)}`);
-
-  // A job has at most one booking. An unpaid one from an abandoned checkout is reused.
-  const existing = await db.booking.findUnique({ where: { jobId: quote.jobId } });
-  if (existing && existing.status !== "PENDING_PAYMENT") redirect(`/jobs/${quote.jobId}`);
+  // A rebook (a tailor they've booked before) doesn't use one of the tailor's monthly jobs.
   const isRepeat = (await bookedTailorIds(user.id, quote.jobId)).has(quote.tailorId);
-  const feeCents = quoteBookingFeeCents(quote, isRepeat);
-  // A rewards voucher comes off automatically when the customer has enough points.
-  const voucherCents = voucherFor(await spendablePoints(user.id, existing?.id), feeCents);
-  const data = { quoteId: quote.id, tailorId: quote.tailorId, customerId: user.id, feeCents, voucherCents, isRepeat };
-  const booking = existing
-    ? await db.booking.update({ where: { id: existing.id }, data: { ...data, stripeCheckoutSessionId: null } })
-    : await db.booking.create({ data: { ...data, jobId: quote.jobId } });
-
-  // Fully covered by a voucher: nothing to pay, so confirm without a checkout.
-  if (feeCents - voucherCents <= 0) {
-    await confirmBooking(booking.id);
-    redirect(`/jobs/${quote.jobId}?booked=1`);
-  }
-
-  const { url, sessionId } = await bookingCheckoutUrl({
-    bookingId: booking.id,
-    jobId: quote.jobId,
-    email: user.email,
-    jobRef: quote.job.ref,
-    tailorName: quote.tailor.businessName,
-    feeCents: feeCents - voucherCents,
-  });
-  if (sessionId) await db.booking.update({ where: { id: booking.id }, data: { stripeCheckoutSessionId: sessionId } });
-  redirect(url);
+  await bookQuote({ quoteId: quote.id, jobId: quote.jobId, customerId: user.id, tailorId: quote.tailorId, isRepeat });
+  redirect(`/jobs/${quote.jobId}?booked=1`);
 }
 
 export async function cancelJob(form: FormData) {
@@ -130,13 +102,13 @@ const ReportIn = z.object({
 
 /**
  * A customer reports that their tailor arranged, or asked to arrange, work outside tailor me.
- * Only the customer on a paid booking can report it, which keeps out rivals and spam. An admin decides.
+ * Only the customer who booked can report it, which keeps out rivals and spam. An admin decides.
  */
 export async function reportOffPlatform(form: FormData) {
   const user = await requireUser();
   const parsed = ReportIn.safeParse(Object.fromEntries(form));
   const booking = await db.booking.findUnique({ where: { id: String(form.get("bookingId")) }, include: { tailor: true, job: true } });
-  if (!booking || booking.customerId !== user.id || !booking.paidAt) redirect("/jobs");
+  if (!booking || booking.customerId !== user.id || booking.status === "CANCELLED") redirect("/jobs");
   if (!parsed.success) redirect(`/jobs/${booking.jobId}?error=${encodeURIComponent(parsed.error.issues[0].message)}#report`);
   await fileReport(user.id, booking.id, booking.tailorId, parsed.data.details, `${booking.tailor.businessName} (job ${booking.job.ref})`);
   redirect(`/jobs/${booking.jobId}?reported=1`);

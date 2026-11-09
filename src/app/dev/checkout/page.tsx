@@ -1,42 +1,30 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { ClubTier } from "@prisma/client";
 import { requireUser } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { money } from "@/lib/fabric";
 import { paymentsMode } from "@/lib/payments";
-import { simulateBookingPayment, simulateClubPayment } from "./actions";
+import { PLANS, TIERS, planJobsLabel, planPriceLabel } from "@/lib/plans";
+import { simulateClubPayment } from "./actions";
 
 export const metadata = { title: "Simulated checkout" };
 
-export default async function DevCheckout({ searchParams }: { searchParams: Promise<{ booking?: string; club?: string }> }) {
+export default async function DevCheckout({ searchParams }: { searchParams: Promise<{ club?: string }> }) {
   if (paymentsMode() !== "simulate") notFound();
-  const { booking: bookingId, club } = await searchParams;
+  const { club } = await searchParams;
   const user = await requireUser();
-  const booking = bookingId ? await db.booking.findUnique({ where: { id: bookingId }, include: { job: true, tailor: true } }) : null;
-  if (bookingId && (!booking || booking.customerId !== user.id)) notFound();
+  const tier = TIERS.find((t) => t === club?.toUpperCase()) as ClubTier | undefined;
 
   return (
     <div className="wrap page narrow">
-      <p className="notice bad" style={{ marginBottom: 16 }}>Simulated payment for local development. No money moves. Set PAYMENTS_MODE=stripe to use real Stripe Checkout.</p>
+      <p className="notice bad" style={{ marginBottom: 16 }}>Simulated payment for local development. No money moves. Set PAYMENTS_MODE=stripe to use real Stripe Billing.</p>
       <div className="panel stack">
-        {booking ? (
+        {tier && user.tailor ? (
           <>
-            <h2>tailor me booking fee</h2>
-            <p className="muted">Job {booking.job.ref} with {booking.tailor.businessName}</p>
-            <p className="num" style={{ fontSize: 32 }}>{money(booking.feeCents - booking.voucherCents)}</p>
-            {booking.voucherCents > 0 && <p className="small muted">{money(booking.feeCents)} fee less a {money(booking.voucherCents)} rewards voucher</p>}
-            <form action={simulateBookingPayment}>
-              <input type="hidden" name="booking" value={booking.id} />
-              <button className="btn btn-primary" style={{ width: "100%" }}>Pay {money(booking.feeCents - booking.voucherCents)}</button>
-            </form>
-            <Link className="btn btn-ghost" href={`/jobs/${booking.jobId}?cancelled=1`}>Cancel</Link>
-          </>
-        ) : club && user.tailor ? (
-          <>
-            <h2>{club === "plus" ? "tailor me Club Plus" : "tailor me Club"}</h2>
-            <p className="num" style={{ fontSize: 32 }}>{club === "plus" ? "$29" : "$10"} / month</p>
+            <h2>tailor me Club · {PLANS[tier].name}</h2>
+            <p className="num" style={{ fontSize: 32 }}>{planPriceLabel(tier)}</p>
+            <p className="muted">{planJobsLabel(tier)}</p>
             <form action={simulateClubPayment}>
-              <input type="hidden" name="tier" value={club} />
+              <input type="hidden" name="tier" value={tier} />
               <button className="btn btn-primary" style={{ width: "100%" }}>Subscribe</button>
             </form>
             <Link className="btn btn-ghost" href="/tailor">Cancel</Link>

@@ -4,8 +4,8 @@ import type { ClubTier } from "@prisma/client";
 
 // Two modes:
 //  - "stripe": real Stripe Checkout + Billing. Needs STRIPE_* env vars.
-//  - "simulate": local only. Checkout redirects straight to a confirm route
-//    that marks things paid. Refuses to run unless APP_URL is localhost.
+//  - "simulate": local only. Club checkout goes to a fake page that marks the
+//    membership paid. Refuses to run unless APP_URL is localhost.
 
 const isLocal = () => {
   try {
@@ -31,43 +31,24 @@ export function stripe(): Stripe {
 
 const appUrl = () => (process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "");
 
-/** Returns the URL to send the customer to for the booking fee. */
-export async function bookingCheckoutUrl(args: { bookingId: string; jobId: string; email: string; jobRef: string; tailorName: string; feeCents: number }) {
-  if (paymentsMode() === "simulate") return { url: `/dev/checkout?booking=${args.bookingId}`, sessionId: null };
-  const session = await stripe().checkout.sessions.create({
-    mode: "payment",
-    customer_email: args.email,
-    line_items: [
-      {
-        quantity: 1,
-        price_data: {
-          currency: "aud",
-          unit_amount: args.feeCents,
-          product_data: {
-            name: "tailor me booking fee",
-            description: `Job ${args.jobRef} with ${args.tailorName}.`,
-          },
-        },
-      },
-    ],
-    metadata: { kind: "booking", bookingId: args.bookingId },
-    success_url: `${appUrl()}/jobs/${args.jobId}?booked=1`,
-    cancel_url: `${appUrl()}/jobs/${args.jobId}?cancelled=1`,
-  });
-  return { url: session.url!, sessionId: session.id };
-}
+// Stripe price for each Club tier: Starter $29, Pro $59, Unlimited $99 a month.
+const PRICE_ENV: Record<ClubTier, string> = {
+  STARTER: "STRIPE_STARTER_PRICE_ID",
+  PRO: "STRIPE_PRO_PRICE_ID",
+  UNLIMITED: "STRIPE_UNLIMITED_PRICE_ID",
+};
 
-/** Stripe price for each Club tier: $10/month Club, $29/month Club Plus. */
 export function priceIdFor(tier: ClubTier) {
-  const id = tier === "PLUS" ? process.env.STRIPE_CLUB_PLUS_PRICE_ID : process.env.STRIPE_CLUB_PRICE_ID;
-  if (!id) throw new Error(tier === "PLUS" ? "STRIPE_CLUB_PLUS_PRICE_ID is not set" : "STRIPE_CLUB_PRICE_ID is not set");
+  const id = process.env[PRICE_ENV[tier]];
+  if (!id) throw new Error(`${PRICE_ENV[tier]} is not set`);
   return id;
 }
 
+/** The tier a Stripe price is for. An unknown price falls back to Starter (the smallest allowance). */
 export const tierForPriceId = (priceId: string | undefined): ClubTier =>
-  priceId && priceId === process.env.STRIPE_CLUB_PLUS_PRICE_ID ? "PLUS" : "CLUB";
+  (Object.keys(PRICE_ENV) as ClubTier[]).find((t) => priceId && process.env[PRICE_ENV[t]] === priceId) ?? "STARTER";
 
-/** Returns the URL to send a tailor to for a new Club or Club Plus subscription. */
+/** Returns the URL to send a tailor to for a new Club subscription at the chosen tier. */
 export async function clubCheckoutUrl(args: { tailorId: string; email: string; stripeCustomerId: string | null; tier: ClubTier }) {
   if (paymentsMode() === "simulate") return `/dev/checkout?club=${args.tier.toLowerCase()}`;
   const price = priceIdFor(args.tier);
@@ -89,7 +70,7 @@ export async function billingPortalUrl(stripeCustomerId: string) {
   return s.url;
 }
 
-/** Moves an existing subscription between Club and Club Plus, prorated. */
+/** Moves an existing subscription between tiers, prorated. */
 export async function changeClubTier(subscriptionId: string, tier: ClubTier) {
   const sub = await stripe().subscriptions.retrieve(subscriptionId);
   const item = sub.items.data[0];

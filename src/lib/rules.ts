@@ -1,6 +1,7 @@
 // Pure permission rules, kept free of I/O so they can be unit tested.
 import type { BookingStatus, ClubStatus, ClubTier, JobStatus, QuoteStatus } from "@prisma/client";
 import { HEAD_START_MINUTES, MAX_QUOTES_PER_JOB } from "./catalog";
+import { type Credits, hasCredit, resetLabel } from "./plans";
 
 export type Verdict = { ok: true } | { ok: false; reason: string };
 const ok: Verdict = { ok: true };
@@ -22,7 +23,8 @@ export const isSuspended = (t: { suspendedUntil?: Date | null } | null | undefin
   !!t?.suspendedUntil && t.suspendedUntil > now;
 /** A paying member who isn't suspended. Everything Club-only checks this. */
 export const isClubMember = (t: MemberLike | null | undefined, now = new Date()) => t?.clubStatus === "ACTIVE" && !isSuspended(t, now);
-export const isPlus = (t: (MemberLike & { clubTier: ClubTier }) | null | undefined) => isClubMember(t) && t?.clubTier === "PLUS";
+/** Unlimited members get Featured placement, the head start and a portfolio. */
+export const isUnlimited = (t: (MemberLike & { clubTier: ClubTier }) | null | undefined) => isClubMember(t) && t?.clubTier === "UNLIMITED";
 
 /** Prisma filter matching isClubMember, for queries. */
 export const activeMemberWhere = (now = new Date()) => ({
@@ -30,15 +32,15 @@ export const activeMemberWhere = (now = new Date()) => ({
   OR: [{ suspendedUntil: null }, { suspendedUntil: { lte: now } }],
 });
 
-/** End of the Club Plus head start for a job when one or more Plus members match it. */
+/** End of the Unlimited head start for a job when one or more Unlimited members match it. */
 export const headStartEnds = (createdAt: Date) => new Date(createdAt.getTime() + HEAD_START_MINUTES * 60_000);
 
 /**
- * When a tailor can first see a job. Plus members and a tailor the customer asked for see it at once;
- * standard Club members see it at openToAllAt (straight away when no Plus member matched).
+ * When a tailor can first see a job. Unlimited members and a tailor the customer asked for see it at once;
+ * Starter and Pro members see it at openToAllAt (straight away when no Unlimited member matched).
  */
 export function visibleFrom(tailor: TailorLike, job: Pick<JobLike, "createdAt" | "requestedTailorId" | "openToAllAt">): Date {
-  if (isPlus(tailor) || job.requestedTailorId === tailor.id) return job.createdAt;
+  if (isUnlimited(tailor) || job.requestedTailorId === tailor.id) return job.createdAt;
   return job.openToAllAt ?? headStartEnds(job.createdAt);
 }
 
@@ -47,10 +49,14 @@ const exclusiveTo = (tailor: TailorLike, job: JobLike) => !!job.exclusive && job
 
 const headStartMessage = (tailor: TailorLike, job: JobLike, now: Date) => {
   const mins = Math.ceil((visibleFrom(tailor, job).getTime() - now.getTime()) / 60_000);
-  return mins > 0 ? `Club Plus members get first look at new jobs. This one opens to you in ${mins} min.` : null;
+  return mins > 0 ? `Unlimited members get first look at new jobs. This one opens to you in ${mins} min.` : null;
 };
 
-export function canQuote(tailor: TailorLike, job: JobLike, quoteCount: number, alreadyQuoted: boolean, now = new Date()): Verdict {
+/**
+ * `credits` = the tailor's jobs left this month (null when not loaded, e.g. in a feed).
+ * A rebook sent to this tailor never needs one: rebooks are free.
+ */
+export function canQuote(tailor: TailorLike, job: JobLike, quoteCount: number, alreadyQuoted: boolean, credits: Credits | null = null, now = new Date()): Verdict {
   if (isSuspended(tailor, now)) return no("Your Club membership is suspended.");
   if (!isClubMember(tailor)) return no("Join the tailor me Club to quote on jobs.");
   if (job.customerId === tailor.userId) return no("You can’t quote on your own job.");
@@ -60,6 +66,9 @@ export function canQuote(tailor: TailorLike, job: JobLike, quoteCount: number, a
   if (wait) return no(wait);
   if (alreadyQuoted) return no("You’ve already quoted on this job.");
   if (quoteCount >= MAX_QUOTES_PER_JOB) return no("This job already has three quotes.");
+  const isTheirRebook = !!job.exclusive && job.requestedTailorId === tailor.id;
+  if (credits && !hasCredit(credits) && !isTheirRebook)
+    return no(`You’ve used this month’s jobs. Upgrade your plan to keep quoting now, or they reset on ${resetLabel(now)}. Rebooks from your own customers are always free.`);
   return ok;
 }
 
@@ -82,19 +91,14 @@ export function canAcceptQuote(userId: string, job: JobLike, quote: { jobId: str
   return ok;
 }
 
-/** Rule 6: reviews only from customers who booked (and paid the fee) through tailor me. */
-export function canReview(
-  userId: string,
-  booking: { customerId: string; status: BookingStatus; paidAt: Date | null },
-  hasReview: boolean,
-): Verdict {
+/** Rule 6: reviews only from customers who booked through tailor me. */
+export function canReview(userId: string, booking: { customerId: string; status: BookingStatus }, hasReview: boolean): Verdict {
   if (booking.customerId !== userId) return no("Only the customer who booked can leave a review.");
-  if (!booking.paidAt || (booking.status !== "CONFIRMED" && booking.status !== "COMPLETED"))
-    return no("You can review once the booking is confirmed.");
+  if (booking.status !== "CONFIRMED" && booking.status !== "COMPLETED") return no("You can review once the booking is confirmed.");
   if (hasReview) return no("You’ve already reviewed this booking. Reviews can’t be edited.");
   return ok;
 }
 
-/** Contact details are only shared once the booking fee is paid. */
+/** Contact details are only shared once the customer has booked (a live booking). */
 export const contactShared = (b: { status: BookingStatus } | null | undefined) =>
   !!b && (b.status === "CONFIRMED" || b.status === "COMPLETED");

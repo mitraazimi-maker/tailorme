@@ -84,7 +84,7 @@ export default async function Home() {
           <div className="section-head"><h2>How it works</h2><p>A few minutes on your phone. Your tailor takes it from there.</p></div>
           <div className="steps">
             <div className="step"><span className="n">Step 1</span><h3>Tell us what needs doing</h3><p>Choose the garment and the work, and add a photo. It takes about two minutes.</p></div>
-            <div className="step"><span className="n">Step 2</span><h3>Choose your tailor</h3><p>Local tailors reply with a ready date and a guide price, confirmed once they see the garment.</p></div>
+            <div className="step"><span className="n">Step 2</span><h3>Choose your tailor</h3><p>Local tailors reply with a ready date and a guide price, confirmed once they see the garment. Booking is free.</p></div>
             <div className="step"><span className="n">Step 3</span><h3>At home or at the studio</h3><p>Have your tailor come to you for a fitting, or drop it at their studio. It comes back pressed and ready to wear.</p></div>
           </div>
         </div>

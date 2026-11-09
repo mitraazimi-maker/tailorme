@@ -1,7 +1,7 @@
 // "Remembers your fit": measurements a tailor takes at the fitting, saved to the
 // customer's fit record on tailor me. The record belongs to the customer: they
 // can see and delete every entry, and every tailor they book through tailor me
-// sees it. Only the tailor of a paid booking can write an entry for it, and
+// sees it. Only the tailor of a live booking can write an entry for it, and
 // customers can't change what a tailor wrote. Pure, unit tested.
 import type { BookingStatus } from "@prisma/client";
 import { findContactDetails } from "./contact-filter";
@@ -42,14 +42,14 @@ export const MAX_FIT_NOTE = 500;
 type BookingLike = { tailorId: string; status: BookingStatus };
 type Verdict = { ok: true } | { ok: false; reason: string };
 
-/** Only the tailor of a paid booking records the fit for it. */
+/** Only the booked tailor records the fit for a live booking. */
 export function canRecordFit(tailorId: string, booking: BookingLike | null | undefined): Verdict {
   if (!booking || booking.tailorId !== tailorId) return { ok: false, reason: "Only the tailor booked for this job can record the fit." };
-  if (booking.status !== "CONFIRMED" && booking.status !== "COMPLETED") return { ok: false, reason: "You can record the fit once the booking is paid." };
+  if (booking.status !== "CONFIRMED" && booking.status !== "COMPLETED") return { ok: false, reason: "This booking was cancelled." };
   return { ok: true };
 }
 
-/** A tailor sees a customer's whole fit record (from every tailor) once that customer has a paid booking with them. */
+/** A tailor sees a customer's whole fit record (from every tailor) once that customer has booked them. */
 export const canSeeFitRecord = (tailorId: string, bookedTailorIds: Set<string>) => bookedTailorIds.has(tailorId);
 
 /**

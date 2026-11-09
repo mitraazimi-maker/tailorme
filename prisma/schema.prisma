@@ -28,9 +28,11 @@ enum ClubStatus {
   CANCELED
 }
 
+// Club tiers (decided 9 Nov 2026): monthly jobs won, see src/lib/plans.ts.
 enum ClubTier {
-  CLUB
-  PLUS
+  STARTER
+  PRO
+  UNLIMITED
 }
 
 enum ReportStatus {
@@ -54,7 +56,6 @@ enum QuoteStatus {
 }
 
 enum BookingStatus {
-  PENDING_PAYMENT
   CONFIRMED
   COMPLETED
   CANCELLED
@@ -80,7 +81,6 @@ model User {
   bookings   Booking[]       @relation("CustomerBookings")
   reviews    Review[]
   myTailors  MyTailor[]
-  points     PointsEntry[]
   reports    ConductReport[]
   fitRecords FitRecord[]
 }
@@ -122,11 +122,13 @@ model TailorProfile {
   abnEntityName String?
 
   clubStatus           ClubStatus @default(NONE)
-  // PLUS: featured in search, 15-minute head start on new jobs, portfolio gallery.
-  clubTier             ClubTier   @default(CLUB)
+  // UNLIMITED also gets: featured in search, 15-minute head start on new jobs, portfolio gallery.
+  clubTier             ClubTier   @default(STARTER)
   stripeCustomerId     String?    @unique
   stripeSubscriptionId String?    @unique
   clubRenewsAt         DateTime?
+  // First joined the Club; months before this carry no unused jobs.
+  clubSince            DateTime?
 
   // Set by an admin on an upheld report of arranging work outside tailor me.
   // While in the future the tailor is treated as not a Club member.
@@ -243,20 +245,20 @@ model Quote {
   @@unique([jobId, tailorId])
 }
 
+// Booking is free for customers (decided 9 Nov 2026). Each new (non-repeat) booking
+// uses one of the tailor's monthly jobs; see src/lib/plans.ts.
 model Booking {
   id                      String        @id @default(cuid())
   jobId                   String        @unique
   quoteId                 String        @unique
   customerId              String
   tailorId                String
-  feeCents                Int
-  // Rewards voucher taken off the fee; the customer pays feeCents - voucherCents.
-  voucherCents            Int           @default(0)
-  // Rebooking a tailor the customer had booked before (flat fee, double points).
+  // Rebooking a tailor the customer had booked before: free for the customer,
+  // and it doesn't use one of the tailor's monthly jobs.
   isRepeat                Boolean       @default(false)
-  status                  BookingStatus @default(PENDING_PAYMENT)
-  stripeCheckoutSessionId String?       @unique
-  paidAt                  DateTime?
+  status                  BookingStatus @default(CONFIRMED)
+  // When the customer accepted the quote. Bookings are free, so this is also when contact details are shared.
+  bookedAt                DateTime      @default(now())
   completedAt             DateTime?
   createdAt               DateTime      @default(now())
 
@@ -291,20 +293,6 @@ model FitRecord {
   @@index([customerId, createdAt])
 }
 
-// Customer rewards: points earned on paid bookings, spent on booking-fee vouchers.
-// Balance is the sum. (bookingId, reason) is unique so webhook retries can't double up.
-model PointsEntry {
-  id        String   @id @default(cuid())
-  userId    String
-  points    Int
-  reason    String // "booking" | "rebook" | "voucher"
-  bookingId String?
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([bookingId, reason])
-  @@index([userId])
-}
 
 // A customer's report that a tailor arranged (or asked to arrange) work outside tailor me.
 // Only customers with a paid booking with that tailor can report. An admin decides.

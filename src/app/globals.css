@@ -372,3 +372,12 @@ button.link.small{font-size:14px;color:var(--ink-2)}
 .fit-kv{margin-top:8px;font-size:14px}
 .fit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
 .fit-grid .field{margin-top:0}
+
+/* Club tiers */
+.plans{display:flex;flex-direction:column;gap:10px}
+.plan{border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:6px;background:var(--card)}
+.plan.current{border-color:var(--tape)}
+.plan ul{margin:0;padding-left:18px}
+.credits{display:flex;flex-direction:column;gap:8px}
+.credits-bar{height:6px;border-radius:9999px;background:var(--line);overflow:hidden}
+.credits-bar span{display:block;height:100%;background:var(--tape)}

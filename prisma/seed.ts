@@ -61,11 +61,9 @@ async function main() {
       db.user.create({ data: { email: `${first.toLowerCase()}@example.com`, firstName: first, passwordHash: hash, suburb: "Paddington", isSample: true } }),
     ),
   );
-  // 40 sample points, so the next booking tips Alex over 50 and earns a voucher.
   await db.user.create({
     data: {
       email: "customer@example.com", firstName: "Alex", passwordHash: hash, suburb: "Paddington", isSample: true,
-      points: { create: { points: 40, reason: "sample" } },
     },
   });
   await db.user.create({ data: { email: "admin@example.com", firstName: "Admin", passwordHash: hash, role: "ADMIN", isSample: true } });
@@ -82,7 +80,7 @@ async function main() {
         tailor: {
           create: {
             slug: t.slug, businessName: t.name, suburb: t.suburb, bio: t.bio, yearsExperience: t.years, languages: t.langs, categories: t.cats,
-            comesToCustomer: t.mobile, sameDay: t.express, offersPickup: t.mobile, pickupFeeCents: t.mobile ? 1500 : null, pickupRadiusKm: 5, pickupNote: t.mobile ? "Weekday evenings" : null, clubStatus: "ACTIVE", clubTier: ti < 2 ? "PLUS" : "CLUB", abnStatus: "CHECKED", abn: "51824753556", abnCheckedAt: new Date(),
+            comesToCustomer: t.mobile, sameDay: t.express, offersPickup: t.mobile, pickupFeeCents: t.mobile ? 1500 : null, pickupRadiusKm: 5, pickupNote: t.mobile ? "Weekday evenings" : null, clubStatus: "ACTIVE", clubTier: ti < 2 ? "UNLIMITED" : ti === 2 ? "PRO" : "STARTER", clubSince: new Date(Date.now() - 120 * 864e5), abnStatus: "CHECKED", abn: "51824753556", abnCheckedAt: new Date(),
             openingHours: "Mon–Sat 9–5", isSample: true,
             services: { create: t.svc.map(([name, note, p], i) => ({ name, note: note || null, priceCents: typeof p === "number" ? p * 100 : null, priceText: typeof p === "string" ? p : null, sortOrder: i })) },
           },
@@ -107,7 +105,7 @@ async function main() {
         data: { jobId: job.id, tailorId: tailor.id, priceCents: (20 + k * 6) * 100, readyBy: new Date(created.getTime() + 3 * 864e5), status: "ACCEPTED", createdAt: new Date(created.getTime() + (10 + ti * 7) * 60000) },
       });
       const booking = await db.booking.create({
-        data: { jobId: job.id, quoteId: quote.id, customerId: customer.id, tailorId: tailor.id, feeCents: 500, status: "COMPLETED", paidAt: created, completedAt: created },
+        data: { jobId: job.id, quoteId: quote.id, customerId: customer.id, tailorId: tailor.id, status: "COMPLETED", bookedAt: created, completedAt: created },
       });
       await db.review.create({
         data: { bookingId: booking.id, tailorId: tailor.id, customerId: customer.id, rating, fitFinish: rating, onTime: Math.max(rating - (k === 1 ? 1 : 0), 1), quoteAccuracy: 5, body },

@@ -5,8 +5,10 @@ import { requireTailor } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { money } from "@/lib/fabric";
 import { paymentsMode } from "@/lib/payments";
-import { HEAD_START_MINUTES, MAX_PORTFOLIO_PHOTOS } from "@/lib/catalog";
-import { isClubMember, isPlus, isSuspended } from "@/lib/rules";
+import { CreditsMeter, PlanCards } from "@/components/plans";
+import { creditsForTailor } from "@/lib/credits";
+import { PLANS, hasCredit, planPriceLabel, resetLabel } from "@/lib/plans";
+import { isClubMember, isUnlimited, isSuspended } from "@/lib/rules";
 import { TailorTabs } from "./TailorTabs";
 
 export const metadata = { title: "Tailor dashboard" };
@@ -20,7 +22,7 @@ export default async function TailorHome({ searchParams }: { searchParams: Promi
     db.booking.findMany({
       where: { tailorId: tailor.id, status: { in: ["CONFIRMED", "COMPLETED"] } },
       include: { job: true, customer: { select: { firstName: true } }, quote: true },
-      orderBy: { paidAt: "desc" },
+      orderBy: { bookedAt: "desc" },
       take: 20,
     }),
   ]);
@@ -31,8 +33,8 @@ export default async function TailorHome({ searchParams }: { searchParams: Promi
     !tailor.abn && "Add your ABN",
   ].filter(Boolean) as string[];
   const member = isClubMember(tailor);
-  const plus = isPlus(tailor);
   const suspended = isSuspended(tailor);
+  const credits = member ? await creditsForTailor(tailor) : null;
   const warnings = await db.conductReport.findMany({ where: { tailorId: tailor.id, status: "WARNED" }, orderBy: { resolvedAt: "desc" }, take: 3 });
 
   return (
@@ -52,15 +54,19 @@ export default async function TailorHome({ searchParams }: { searchParams: Promi
           <b style={{ color: "var(--ink)" }}>Warning on your account:</b> {warnings[0].adminNote} A further upheld report of booking customers outside tailor me means a 6-month suspension.
         </div>
       )}
-      {tier === "plus" && <p className="notice ok" style={{ marginBottom: 16 }}>You’re on Club Plus. You’re now featured in search and get first look at new jobs.</p>}
-      {tier === "club" && <p className="notice ok" style={{ marginBottom: 16 }}>You’re back on Club at $10/month.</p>}
+      {tier && member && <p className="notice ok" style={{ marginBottom: 16 }}>You’re on {PLANS[tailor.clubTier].name} at {planPriceLabel(tailor.clubTier)}.{isUnlimited(tailor) && " You’re featured in search and get first look at new jobs."}</p>}
+      {credits && !hasCredit(credits) && (
+        <div className="notice bad" role="alert" style={{ marginBottom: 16 }}>
+          <b style={{ color: "var(--ink)" }}>You’ve used this month’s jobs.</b> You can’t quote on new jobs until {resetLabel()}, or switch to a bigger plan now. Rebooks from your own customers are always free, and quotes you’ve already sent can still be booked.
+        </div>
+      )}
 
       <div className="detail-grid">
         <div className="stack">
           {member && (
             <div className="notice">
-              <b style={{ color: "var(--ink)" }}>Keep your regulars booking through tailor me.</b> When a past customer rebooks you here it costs
-              them a flat $5, the job comes only to you, and every booking adds to your reviews and your “Booked through tailor me” count.
+              <b style={{ color: "var(--ink)" }}>Keep your regulars booking through tailor me.</b> When a past customer rebooks you here it’s free
+              for them and doesn’t use one of your monthly jobs. The job comes only to you, and every booking adds to your reviews and your “Booked through tailor me” count.
               Point them to <Link className="link" href={`/tailors/${tailor.slug}`}>your profile</Link> and the Rebook button.
             </div>
           )}
@@ -104,40 +110,24 @@ export default async function TailorHome({ searchParams }: { searchParams: Promi
         <aside className="panel stack">
           <div className="eyebrow" style={{ color: "var(--tape)" }}>The tailor me Club</div>
           <div className="row-wrap" style={{ justifyContent: "space-between" }}>
-            <h2 style={{ margin: 0 }}>{plus ? "Club Plus" : member ? "Club" : "Not a member yet"}</h2>
+            <h2 style={{ margin: 0 }}>{member ? PLANS[tailor.clubTier].name : "Not a member yet"}</h2>
             <Status s={tailor.clubStatus} label={tailor.clubStatus === "NONE" ? "inactive" : undefined} />
           </div>
           {member && (
             <p className="muted small">
-              {plus ? "$29/month" : "$10/month"}. No lead fees, no commission, unlimited quotes.
+              {planPriceLabel(tailor.clubTier)}. Customers book you for free; you never pay commission or per quote.
               {tailor.clubRenewsAt && ` Renews ${tailor.clubRenewsAt.toLocaleDateString("en-AU", { day: "numeric", month: "short" })}.`}
             </p>
           )}
+          {credits && <CreditsMeter credits={credits} />}
           {!member && !suspended && (
             <>
-              <p className="muted small">Join to appear in search, see job photos and quote. No lead fees and no commission. Customers pay tailor me the booking fee, not you.</p>
+              <p className="muted small">Join to appear in search, see job photos and quote. Quote as often as you like: a job is used only when a customer books you, and rebooks are free. Unused jobs roll over for a month.</p>
               {tailor.clubStatus === "PAST_DUE" && <p className="notice bad">Your last payment didn’t go through. Update your card to stay listed.</p>}
-              <form action={joinClub}><input type="hidden" name="tier" value="CLUB" /><button className="btn btn-ghost" style={{ width: "100%" }}>Join the Club · $10/month</button></form>
             </>
           )}
-          {!plus && !suspended && (
-            <div className="notice" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <b style={{ color: "var(--ink)" }}>Club Plus · $29/month</b>
-              <ul style={{ margin: 0, paddingLeft: 18 }}>
-                <li><b>Featured</b> at the top of search</li>
-                <li>See and quote new jobs <b>{HEAD_START_MINUTES} minutes</b> before everyone else</li>
-                <li>A portfolio of up to {MAX_PORTFOLIO_PHOTOS} photos on your profile</li>
-              </ul>
-              <form action={member ? changeTier : joinClub}>
-                <input type="hidden" name="tier" value="PLUS" />
-                <button className="btn btn-primary" style={{ width: "100%" }}>{member ? "Upgrade to Club Plus" : "Join Club Plus · $29/month"}</button>
-              </form>
-              {member && <span className="small">The difference is prorated for the rest of this month.</span>}
-            </div>
-          )}
-          {plus && (
-            <form action={changeTier}><input type="hidden" name="tier" value="CLUB" /><button className="btn btn-ghost btn-sm">Switch back to Club · $10/month</button></form>
-          )}
+          {!suspended && <PlanCards current={member ? tailor.clubTier : null} action={member ? changeTier : joinClub} verb={member ? "switch" : "join"} />}
+          {member && <span className="small muted">Switching takes effect straight away; the price difference is prorated.</span>}
           {member && paymentsMode() === "stripe" && tailor.stripeCustomerId && <form action={manageBilling}><button className="btn btn-ghost btn-sm">Manage billing</button></form>}
           <hr style={{ border: 0, borderTop: "1px solid var(--line)", width: "100%" }} />
           <b>The tailor me standard</b>

@@ -36,7 +36,7 @@ export default async function JobFeed({ searchParams }: { searchParams: Promise<
     .map((j) => ({ ...j, km: distanceKm(tailor.suburb, j.suburb) }))
     .filter((j) => j.requestedTailorId === tailor.id || all || j.km == null || j.km <= RADIUS_KM)
     .filter((j) => j.quotes.length < MAX_QUOTES_PER_JOB || j.quotes.some((q) => q.tailorId === tailor.id));
-  // Jobs still in the Club Plus head start are counted, not shown.
+  // Jobs still in the Unlimited head start are counted, not shown.
   const visible = matching.filter((j) => visibleFrom(tailor, j) <= now);
   const held = matching.length - visible.length;
 
@@ -54,8 +54,8 @@ export default async function JobFeed({ searchParams }: { searchParams: Promise<
       )}
       {held > 0 && (
         <p className="notice" style={{ marginBottom: 16 }}>
-          {held} new job{held === 1 ? " is" : "s are"} in the {HEAD_START_MINUTES}-minute Club Plus head start and will appear here shortly.{" "}
-          <Link className="link" href="/tailor">Upgrade to Club Plus</Link> to see new jobs first.
+          {held} new job{held === 1 ? " is" : "s are"} in the {HEAD_START_MINUTES}-minute Unlimited head start and will appear here shortly.{" "}
+          <Link className="link" href="/tailor">Switch to Unlimited</Link> to see new jobs first.
         </p>
       )}
       {visible.length === 0 ? (

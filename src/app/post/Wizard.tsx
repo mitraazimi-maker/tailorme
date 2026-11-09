@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Disclaimer } from "@/components/ui";
-import { ACKNOWLEDGEMENT, BOOKING_FEE_LABEL, FITTING, GARMENTS, INTRO, MAX_PHOTOS, REPEAT_FEE_LABEL, TIMING, WORK, estimate } from "@/lib/catalog";
+import { ACKNOWLEDGEMENT, FITTING, FREE_FOR_CUSTOMERS, GARMENTS, INTRO, MAX_PHOTOS, TIMING, WORK, estimate } from "@/lib/catalog";
 import { contactRefusal, findContactDetails } from "@/lib/contact-filter";
 import { SUBURB_NAMES, findSuburb } from "@/lib/suburbs";
 
@@ -271,7 +271,7 @@ export default function Wizard({ user: initialUser, defaultSuburb, tailor, reboo
           <button type="button" className="btn btn-ghost btn-sm" onClick={startAgain}>Start again</button>
         </div>
       )}
-      {tailor && rebook && <p className="notice ok" style={{ marginBottom: 18 }}>Rebooking <b>{tailor.name}</b>. Only they’ll see this job, and the booking fee is a flat $5. You can open it to other tailors later.</p>}
+      {tailor && rebook && <p className="notice ok" style={{ marginBottom: 18 }}>Rebooking <b>{tailor.name}</b>. Only they’ll see this job. You can open it to other tailors later.</p>}
       {tailor && !rebook && <p className="notice" style={{ marginBottom: 18 }}>Requesting a quote from <b>{tailor.name}</b>. Other matching tailors nearby can quote too.</p>}
       {fitSavedOn && <p className="notice small" style={{ marginBottom: 18 }}>{rebook && tailor ? <><b>{tailor.name}</b> will see</> : "The tailor you book will see"} your saved fit record (last measured {fitSavedOn}), so they start from your measurements.</p>}
 
@@ -417,7 +417,7 @@ export default function Wizard({ user: initialUser, defaultSuburb, tailor, reboo
             {photos.map((p, i) => <img key={p.url} src={p.url} alt={`Garment photo ${i + 1}`} />)}
           </div>
           <div className="est">Guide price for this job in Sydney: <b style={{ marginLeft: "auto" }}>${lo} – ${hi}</b></div>
-          <div className="est" style={{ marginTop: 8 }}>tailor me booking fee, charged only when you accept a quote: <b style={{ marginLeft: "auto", textAlign: "right" }}>{rebook ? REPEAT_FEE_LABEL : BOOKING_FEE_LABEL}</b></div>
+          <div className="est" style={{ marginTop: 8 }}>{FREE_FOR_CUSTOMERS}</div>
           <div style={{ marginTop: 12 }}><Disclaimer /></div>
           <p className="intro-note">{INTRO}</p>
           <label className="ack" htmlFor="wAck">

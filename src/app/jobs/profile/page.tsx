@@ -77,7 +77,7 @@ export default async function FitProfile({ searchParams }: { searchParams: Promi
                   <span>
                     {m.tailor.suburb} ·{" "}
                     {booked.has(m.tailorId) ? (
-                      <Link className="link" href={`/post?tailor=${m.tailor.slug}&rebook=1`}>Rebook · flat $5</Link>
+                      <Link className="link" href={`/post?tailor=${m.tailor.slug}&rebook=1`}>Rebook</Link>
                     ) : (
                       <Link className="link" href={`/post?tailor=${m.tailor.slug}`}>Request a quote</Link>
                     )}

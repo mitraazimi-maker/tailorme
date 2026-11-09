@@ -5,7 +5,8 @@ import { requireAdmin } from "@/lib/auth";
 import { formatAbn } from "@/lib/abn";
 import { db } from "@/lib/db";
 import { SUSPENSION_MONTHS } from "@/lib/catalog";
-import { activeMemberWhere, isSuspended } from "@/lib/rules";
+import { activeMemberWhere, isClubMember, isSuspended } from "@/lib/rules";
+import { PLANS } from "@/lib/plans";
 
 export const metadata = { title: "Admin" };
 
@@ -15,7 +16,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
   const [tailors, jobs, bookings, members, reports, history] = await Promise.all([
     db.tailorProfile.findMany({ orderBy: [{ abnStatus: "asc" }, { createdAt: "desc" }], include: { user: { select: { email: true } } } }),
     db.job.count(),
-    db.booking.count({ where: { paidAt: { not: null } } }),
+    db.booking.count({ where: { status: { in: ["CONFIRMED", "COMPLETED"] } } }),
     db.tailorProfile.count({ where: activeMemberWhere() }),
     db.conductReport.findMany({
       where: { status: "OPEN" },
@@ -24,6 +25,8 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
     }),
     db.conductReport.groupBy({ by: ["tailorId", "status"], where: { status: { not: "OPEN" } }, _count: true }),
   ]);
+  // Monthly recurring revenue: every active member's plan price.
+  const mrr = tailors.filter((t) => isClubMember(t)).reduce((sum, t) => sum + PLANS[t.clubTier].priceCents, 0);
   const past = (tailorId: string) =>
     history.filter((h) => h.tailorId === tailorId && h.status !== "DISMISSED").map((h) => `${h._count} ${h.status.toLowerCase()}`).join(", ") || "none";
   return (
@@ -32,7 +35,8 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
       <div className="row-wrap" style={{ marginBottom: 20 }}>
         <span className="pill">{members} Club members</span>
         <span className="pill">{jobs} jobs</span>
-        <span className="pill">{bookings} paid bookings</span>
+        <span className="pill">{bookings} bookings</span>
+        <span className="pill">${(mrr / 100).toLocaleString("en-AU")} a month in memberships</span>
         <span className={`pill ${reports.length ? "y" : ""}`}>{reports.length} open report{reports.length === 1 ? "" : "s"}</span>
       </div>
       {error && <p className="notice bad" role="alert" style={{ marginBottom: 16 }}>{error}</p>}
@@ -83,7 +87,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
                 <td className="mono">{t.abn ? formatAbn(t.abn) : "—"}{t.abnEntityName && <div className="muted">{t.abnEntityName}</div>}</td>
                 <td>
                   <Status s={t.clubStatus} />
-                  {t.clubTier === "PLUS" && <div className="muted" style={{ marginTop: 4 }}>Plus</div>}
+                  {t.clubStatus === "ACTIVE" && <div className="muted" style={{ marginTop: 4 }}>{t.clubTier === "UNLIMITED" ? "Unlimited" : t.clubTier === "PRO" ? "Pro" : "Starter"}</div>}
                   {isSuspended(t) && (
                     <form action={liftSuspension} style={{ marginTop: 6 }}>
                       <input type="hidden" name="tailorId" value={t.id} />

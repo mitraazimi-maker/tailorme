@@ -4,6 +4,7 @@ import { markCompleted, recordFit, submitQuote, withdrawQuote } from "@/app/acti
 import { FitHistory } from "@/components/fit";
 import { MAX_FIT_NOTE, MEASURES, fitApplies, measuresFor } from "@/lib/fit";
 import { fitRecordFor } from "@/lib/fit-records";
+import { creditsForTailor } from "@/lib/credits";
 import { Disclaimer, IntroNote, Status } from "@/components/ui";
 import { requireTailor } from "@/lib/auth";
 import { MAX_QUOTES_PER_JOB, estimate } from "@/lib/catalog";
@@ -42,14 +43,16 @@ export default async function TailorJob({ params, searchParams }: { params: Prom
       </div>
     );
   }
-  const quoteVerdict = canQuote(tailor, job, job.quotes.length, !!mine);
+  const credits = mine ? null : await creditsForTailor(tailor);
+  const quoteVerdict = canQuote(tailor, job, job.quotes.length, !!mine, credits);
+  const isTheirRebook = job.exclusive && job.requestedTailorId === tailor.id;
   const [lo, hi] = estimate(job.garment, job.work, job.timing);
   const km = distanceKm(tailor.suburb, job.suburb);
   const pastJobs = bookedHere
     ? await db.booking.findMany({
         where: { tailorId: tailor.id, customerId: bookedHere.customer.id, id: { not: bookedHere.id }, status: { in: ["CONFIRMED", "COMPLETED"] } },
         include: { job: true, quote: true },
-        orderBy: { paidAt: "desc" },
+        orderBy: { bookedAt: "desc" },
         take: 10,
       })
     : [];
@@ -110,7 +113,7 @@ export default async function TailorJob({ params, searchParams }: { params: Prom
                 <div style={{ marginTop: 14 }}>
                   <b>Past jobs with you</b>
                   <ul className="small muted" style={{ paddingLeft: 18 }}>
-                    {pastJobs.map((p) => <li key={p.id}>{p.job.work} · {p.job.garment} · {money(p.quote.priceCents)} · {p.paidAt?.toLocaleDateString("en-AU")}</li>)}
+                    {pastJobs.map((p) => <li key={p.id}>{p.job.work} · {p.job.garment} · {money(p.quote.priceCents)} · {p.bookedAt?.toLocaleDateString("en-AU")}</li>)}
                   </ul>
                 </div>
               )}
@@ -203,10 +206,19 @@ export default async function TailorJob({ params, searchParams }: { params: Prom
               </div>
               <Disclaimer />
               <button className="btn btn-primary">Send quote</button>
+              {credits && (
+                <p className="small muted">
+                  {isTheirRebook
+                    ? "A rebook from your own customer: free, it won’t use one of your jobs."
+                    : credits.unlimited
+                      ? "Unlimited plan: no limit on jobs."
+                      : `If they book you, this uses 1 of your ${credits.left} jobs left this month. Quoting is free.`}
+                </p>
+              )}
               <IntroNote className="small muted" />
             </form>
           ) : (
-            <div className="panel"><p className="muted">{quoteVerdict.reason}</p></div>
+            <div className="panel stack"><p className="muted">{quoteVerdict.reason}</p>{credits && !credits.unlimited && credits.left === 0 && <Link className="btn btn-primary btn-sm" href="/tailor" style={{ alignSelf: "flex-start" }}>See plans</Link>}</div>
           )}
         </aside>
       </div>
