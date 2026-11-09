@@ -5,7 +5,7 @@ import { patternFor, type TailorCard } from "./tailor-display";
 
 export { patternFor, replyLabel, type TailorCard } from "./tailor-display";
 import { db } from "./db";
-import { activeMemberWhere, isUnlimited } from "./rules";
+import { activeMemberWhere, isFeatured } from "./rules";
 import { picksUpFrom } from "./pickup";
 import { distanceKm } from "./suburbs";
 
@@ -46,7 +46,7 @@ async function decorate(rows: Prisma.TailorProfileGetPayload<{ include: { servic
       replyMins: mins.length >= 3 ? mins.sort((a, b) => a - b)[Math.floor(mins.length / 2)] : null,
       categories: t.categories,
       abnChecked: t.abnStatus === "CHECKED",
-      featured: isUnlimited(t),
+      featured: isFeatured(t),
       comesToCustomer: t.comesToCustomer,
       pickupFeeCents: near && picksUpFrom(t, near) ? (t.pickupFeeCents ?? 0) : null,
       sameDay: t.sameDay,
@@ -94,7 +94,7 @@ export async function searchTailors(s: Search): Promise<TailorCard[]> {
 
   const score = (c: TailorCard) => (c.rating ?? 4) * Math.log(c.reviews + 2) - (c.km ?? 10) * 0.05;
   const sorts = {
-    // Featured (Unlimited) first in the default order only; an explicit sort is respected.
+    // Featured (paid add-on) first in the default order only; an explicit sort is respected.
     match: (a: TailorCard, b: TailorCard) => Number(b.featured) - Number(a.featured) || score(b) - score(a),
     near: (a: TailorCard, b: TailorCard) => (a.km ?? 999) - (b.km ?? 999),
     rating: (a: TailorCard, b: TailorCard) => (b.rating ?? 0) - (a.rating ?? 0),

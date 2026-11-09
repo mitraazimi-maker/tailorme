@@ -5,7 +5,7 @@ import { formatAbn } from "@/lib/abn";
 import { CATEGORIES, MAX_PORTFOLIO_PHOTOS } from "@/lib/catalog";
 import { PICKUP_RADII_KM } from "@/lib/pickup";
 import { db } from "@/lib/db";
-import { isUnlimited } from "@/lib/rules";
+import { isFeatured } from "@/lib/rules";
 import { SUBURB_NAMES } from "@/lib/suburbs";
 import { TailorTabs } from "../TailorTabs";
 
@@ -20,7 +20,7 @@ export default async function TailorProfileEdit({ searchParams }: { searchParams
     db.service.findMany({ where: { tailorId: tailor.id }, orderBy: { sortOrder: "asc" } }),
     db.portfolioPhoto.findMany({ where: { tailorId: tailor.id }, orderBy: { createdAt: "desc" } }),
   ]);
-  const plus = isUnlimited(tailor);
+  const plus = isFeatured(tailor);
   const rows = [...services, ...Array.from({ length: Math.max(3, 10 - services.length) }, () => null)].slice(0, Math.max(10, services.length + 3));
 
   return (
@@ -117,10 +117,10 @@ export default async function TailorProfileEdit({ searchParams }: { searchParams
       <div className="panel stack" id="portfolio">
         <div className="row-wrap" style={{ justifyContent: "space-between" }}>
           <h2 style={{ margin: 0 }}>Portfolio</h2>
-          <span className="pill y">Unlimited</span>
+          <span className="pill y">Featured</span>
         </div>
         {!plus ? (
-          <p className="muted small">Show customers your best work: up to {MAX_PORTFOLIO_PHOTOS} photos on your profile. <Link className="link" href="/tailor">Switch to Unlimited</Link>.</p>
+          <p className="muted small">Show customers your best work: up to {MAX_PORTFOLIO_PHOTOS} photos on your profile. <Link className="link" href="/tailor">Add Featured</Link>.</p>
         ) : (
           <>
             <p className="small muted">Your own photos of finished work, shown on your public profile. {portfolio.length} / {MAX_PORTFOLIO_PHOTOS}.</p>

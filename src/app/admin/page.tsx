@@ -6,7 +6,7 @@ import { formatAbn } from "@/lib/abn";
 import { db } from "@/lib/db";
 import { SUSPENSION_MONTHS } from "@/lib/catalog";
 import { activeMemberWhere, isClubMember, isSuspended } from "@/lib/rules";
-import { PLANS } from "@/lib/plans";
+import { FEATURED, PLANS } from "@/lib/plans";
 
 export const metadata = { title: "Admin" };
 
@@ -26,7 +26,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
     db.conductReport.groupBy({ by: ["tailorId", "status"], where: { status: { not: "OPEN" } }, _count: true }),
   ]);
   // Monthly recurring revenue: every active member's plan price.
-  const mrr = tailors.filter((t) => isClubMember(t)).reduce((sum, t) => sum + PLANS[t.clubTier].priceCents, 0);
+  const mrr = tailors.filter((t) => isClubMember(t)).reduce((sum, t) => sum + PLANS[t.clubTier].priceCents + (t.featuredStatus === "ACTIVE" ? FEATURED.priceCents : 0), 0);
   const past = (tailorId: string) =>
     history.filter((h) => h.tailorId === tailorId && h.status !== "DISMISSED").map((h) => `${h._count} ${h.status.toLowerCase()}`).join(", ") || "none";
   return (
@@ -87,7 +87,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
                 <td className="mono">{t.abn ? formatAbn(t.abn) : "—"}{t.abnEntityName && <div className="muted">{t.abnEntityName}</div>}</td>
                 <td>
                   <Status s={t.clubStatus} />
-                  {t.clubStatus === "ACTIVE" && <div className="muted" style={{ marginTop: 4 }}>{PLANS[t.clubTier].name}</div>}
+                  {t.clubStatus === "ACTIVE" && <div className="muted" style={{ marginTop: 4 }}>{PLANS[t.clubTier].name}{t.featuredStatus === "ACTIVE" && " · Featured"}</div>}
                   {isSuspended(t) && (
                     <form action={liftSuspension} style={{ marginTop: 6 }}>
                       <input type="hidden" name="tailorId" value={t.id} />

@@ -29,12 +29,17 @@ enum ClubStatus {
 }
 
 // Club tiers (decided 9 Nov 2026): monthly jobs won, see src/lib/plans.ts.
+// No unlimited plan: past the allowance, tailors buy extra jobs (ExtraJobsPurchase).
 enum ClubTier {
   STARTER
   PRO
   BUSY
   STUDIO
-  UNLIMITED
+}
+
+enum PurchaseStatus {
+  PENDING
+  PAID
 }
 
 enum ReportStatus {
@@ -124,13 +129,18 @@ model TailorProfile {
   abnEntityName String?
 
   clubStatus           ClubStatus @default(NONE)
-  // UNLIMITED also gets: featured in search, 15-minute head start on new jobs, portfolio gallery.
   clubTier             ClubTier   @default(STARTER)
   stripeCustomerId     String?    @unique
   stripeSubscriptionId String?    @unique
   clubRenewsAt         DateTime?
   // First joined the Club; months before this carry no unused jobs.
   clubSince            DateTime?
+
+  // Featured add-on, its own monthly subscription on any plan: featured in search,
+  // 15-minute head start on new jobs, portfolio gallery. Max 3 per suburb.
+  featuredStatus         ClubStatus @default(NONE)
+  featuredSubscriptionId String?    @unique
+  featuredRenewsAt       DateTime?
 
   // Set by an admin on an upheld report of arranging work outside tailor me.
   // While in the future the tailor is treated as not a Club member.
@@ -151,9 +161,10 @@ model TailorProfile {
   portfolio PortfolioPhoto[]
   reports   ConductReport[]
   fitRecords FitRecord[]
+  extraJobs  ExtraJobsPurchase[]
 }
 
-// Club Plus portfolio. Public on the tailor's profile while they're on Plus.
+// Portfolio. Public on the tailor's profile while they have the Featured add-on.
 model PortfolioPhoto {
   id         String        @id @default(cuid())
   tailorId   String
@@ -345,4 +356,22 @@ model MyTailor {
   tailor     TailorProfile @relation(fields: [tailorId], references: [id], onDelete: Cascade)
 
   @@id([customerId, tailorId])
+}
+
+// Extra jobs bought one-off when a tailor's plan runs out ($7 each, src/lib/plans.ts).
+// They count only in the Sydney month they were bought (`month`, e.g. "2026-11").
+model ExtraJobsPurchase {
+  id              String         @id @default(cuid())
+  tailorId        String
+  jobs            Int
+  amountCents     Int
+  month           String
+  status          PurchaseStatus @default(PENDING)
+  stripeSessionId String?        @unique
+  createdAt       DateTime       @default(now())
+  paidAt          DateTime?
+
+  tailor TailorProfile @relation(fields: [tailorId], references: [id], onDelete: Cascade)
+
+  @@index([tailorId, month, status])
 }

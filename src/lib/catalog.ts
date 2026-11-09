@@ -11,7 +11,7 @@ export const ACKNOWLEDGEMENT =
 
 // Booking is free for customers (decided 9 Nov 2026). Tailors pay by Club tier: src/lib/plans.ts.
 export const FREE_FOR_CUSTOMERS = "Free to post and free to book. You pay your tailor for the work.";
-/** Unlimited members see new jobs this long before Starter and Pro members. */
+/** Featured tailors see new jobs this long before everyone else. */
 export const HEAD_START_MINUTES = 15;
 export const MAX_PORTFOLIO_PHOTOS = 12;
 /** Penalty for an upheld report of arranging work outside tailor me. */

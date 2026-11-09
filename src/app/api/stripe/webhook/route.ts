@@ -1,9 +1,9 @@
 import type Stripe from "stripe";
-import { clubStatusFromStripe } from "@/lib/bookings";
+import { clubStatusFromStripe, confirmExtraJobs } from "@/lib/bookings";
 import { db } from "@/lib/db";
 import { stripe, tierForPriceId } from "@/lib/payments";
 
-// Stripe webhook (Club subscriptions only; booking is free). Configure the endpoint for:
+// Stripe webhook: Club plans, the Featured add-on and extra jobs (booking is free). Configure the endpoint for:
 //   checkout.session.completed, customer.subscription.created,
 //   customer.subscription.updated, customer.subscription.deleted
 export async function POST(req: Request) {
@@ -19,7 +19,8 @@ export async function POST(req: Request) {
   switch (event.type) {
     case "checkout.session.completed": {
       const s = event.data.object;
-      if (s.metadata?.kind === "club" && typeof s.subscription === "string") {
+      if (s.metadata?.kind === "extras" && s.payment_status === "paid") await confirmExtraJobs(s.metadata.purchaseId);
+      if ((s.metadata?.kind === "club" || s.metadata?.kind === "featured") && typeof s.subscription === "string") {
         const sub = await stripe().subscriptions.retrieve(s.subscription);
         await syncSubscription(sub, s.metadata.tailorId);
       }
@@ -39,6 +40,14 @@ async function syncSubscription(sub: Stripe.Subscription, tailorId: string | und
   const where = tailorId ? { id: tailorId } : { stripeCustomerId: customer };
   const item = sub.items.data[0];
   const periodEnd = item?.current_period_end;
+  // The Featured add-on is its own subscription; it never changes the plan.
+  if (sub.metadata?.addon === "featured") {
+    await db.tailorProfile.updateMany({
+      where,
+      data: { featuredStatus: clubStatusFromStripe(sub.status), featuredSubscriptionId: sub.id, featuredRenewsAt: periodEnd ? new Date(periodEnd * 1000) : null, stripeCustomerId: customer },
+    });
+    return;
+  }
   await db.tailorProfile.updateMany({
     where,
     data: {

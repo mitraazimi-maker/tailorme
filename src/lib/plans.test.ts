@@ -1,12 +1,31 @@
 import { describe, expect, it } from "vitest";
-import { PLANS, creditsFor, hasCredit, monthEnd, monthKey, monthStart, prevMonthKey, rollover } from "./plans";
+import { EXTRA_JOB_CENTS, FEATURED, PLANS, TIERS, cheapestFor, creditsFor, featuredSpotsLeft, hasCredit, monthEnd, monthKey, monthStart, prevMonthKey, rollover } from "./plans";
 
 it("prices and allowances are as decided", () => {
-  expect([PLANS.STARTER.priceCents, PLANS.STARTER.jobs]).toEqual([2900, 5]);
-  expect([PLANS.PRO.priceCents, PLANS.PRO.jobs]).toEqual([5900, 10]);
-  expect([PLANS.BUSY.priceCents, PLANS.BUSY.jobs]).toEqual([14900, 25]);
-  expect([PLANS.STUDIO.priceCents, PLANS.STUDIO.jobs]).toEqual([24900, 50]);
-  expect([PLANS.UNLIMITED.priceCents, PLANS.UNLIMITED.jobs]).toEqual([29900, null]);
+  expect(TIERS.map((t) => [PLANS[t].jobs, PLANS[t].priceCents])).toEqual([[5, 2900], [12, 5900], [25, 12900], [50, 23900]]);
+  expect(EXTRA_JOB_CENTS).toBe(700);
+  expect([FEATURED.priceCents, FEATURED.perSuburb]).toEqual([7900, 3]);
+});
+
+describe("extra jobs never undercut the next plan for regular overflow", () => {
+  it("each plan + extras up to the next allowance costs at least the next plan", () => {
+    for (let i = 0; i < TIERS.length - 1; i++) {
+      const here = PLANS[TIERS.at(i)!], next = PLANS[TIERS.at(i + 1)!];
+      expect(here.priceCents + (next.jobs - here.jobs) * EXTRA_JOB_CENTS).toBeGreaterThanOrEqual(next.priceCents);
+    }
+  });
+  it("picks the cheapest mix", () => {
+    expect(cheapestFor(4)).toMatchObject({ tier: "STARTER", extras: 0, cents: 2900 });
+    expect(cheapestFor(18)).toMatchObject({ tier: "PRO", extras: 6, cents: 5900 + 6 * 700 });
+    expect(cheapestFor(45)).toMatchObject({ tier: "STUDIO", extras: 0 });
+    expect(cheapestFor(90)).toMatchObject({ tier: "STUDIO", extras: 40, cents: 23900 + 40 * 700 });
+  });
+});
+
+it("Featured is capped per suburb", () => {
+  expect(featuredSpotsLeft(0)).toBe(3);
+  expect(featuredSpotsLeft(2)).toBe(1);
+  expect(featuredSpotsLeft(5)).toBe(0);
 });
 
 describe("Sydney months", () => {
@@ -43,10 +62,12 @@ describe("creditsFor", () => {
     expect(hasCredit(c)).toBe(true);
   });
   it("runs out", () => expect(hasCredit(creditsFor("STARTER", u(5, 5, 5), longAgo, now))).toBe(false));
-  it("adds last month's unused", () => expect(creditsFor("PRO", u(0, 6, 10), longAgo, now)).toMatchObject({ carried: 4, left: 14 }));
+  it("extra jobs bought this month add to what's left", () =>
+    expect(creditsFor("STARTER", u(5, 5, 5), longAgo, now, 5)).toMatchObject({ extras: 5, left: 5 }));
+  it("adds last month's unused", () => expect(creditsFor("PRO", u(0, 8, 12), longAgo, now)).toMatchObject({ carried: 4, left: 16 }));
+  it("a month that ran on extras carries nothing", () => expect(creditsFor("PRO", u(0, 20, 12), longAgo, now)).toMatchObject({ carried: 0, left: 12 }));
   it("rollover lasts one month only", () =>
     // Used nothing for two months: the carry is capped at one month's allowance.
     expect(creditsFor("STARTER", u(0, 0, 0), longAgo, now)).toMatchObject({ carried: 5, left: 10 }));
-  it("Busy has 25", () => expect(creditsFor("BUSY", u(24, 25, 25), longAgo, now)).toMatchObject({ allowance: 25, left: 1 }));
-  it("Unlimited never runs out", () => expect(hasCredit(creditsFor("UNLIMITED", u(500, 0, 0), longAgo, now))).toBe(true));
+  it("Studio has 50", () => expect(creditsFor("STUDIO", u(49, 50, 50), longAgo, now)).toMatchObject({ allowance: 50, left: 1 }));
 });

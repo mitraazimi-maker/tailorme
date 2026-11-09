@@ -13,7 +13,7 @@ export type TailorCard = {
   replyMins: number | null;
   categories: string[];
   abnChecked: boolean;
-  /** Unlimited: shown first in "Best match" and always labelled "Featured". */
+  /** Featured add-on: shown first in "Best match" and always labelled "Featured". */
   featured: boolean;
   comesToCustomer: boolean;
   /** Set when the tailor collects from the suburb being searched: their fee in cents (0 = free). */

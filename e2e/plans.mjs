@@ -1,5 +1,6 @@
-// Tailor-only pricing (9 Nov 2026): free booking for customers, Club tiers with monthly
-// jobs won, free rebooks, out-of-jobs blocks new quotes, upgrading unblocks.
+// Tailor-only pricing (9 Nov 2026): free booking for customers, Club plans with monthly
+// jobs won, free rebooks, out of jobs blocks new quotes, extra jobs and upgrading unblock,
+// the Featured add-on and its per-suburb cap.
 import { PrismaClient } from "@prisma/client";
 import { BASE, SHOTS, book, check, done, login, phone, postJob, sendQuote, shows } from "./lib.mjs";
 
@@ -58,21 +59,54 @@ check((await jobsLeft(k)) === 0, "used up all this month's jobs", "jobs not used
 check(await shows(k, "You’ve used this month’s jobs"), "dashboard says they're out of jobs", "no out-of-jobs notice");
 const job2 = await postJob(c, { ...uniform, description: "A work shirt, sleeves up 2 cm." });
 await k.goto(`${BASE}/tailor/jobs/${job2}`);
-check(await shows(k, "Upgrade your plan to keep quoting"), "can't quote with no jobs left", "quoted with no jobs left");
+check(await shows(k, "Buy extra jobs or upgrade your plan"), "can't quote with no jobs left", "quoted with no jobs left");
 check((await k.locator("#price").count()) === 0, "quote form hidden", "quote form still shown");
+
+// --- Extra jobs: $7 each, this month only ---
+await k.goto(BASE + "/tailor");
+await k.getByRole("button", { name: /Buy 1 extra job for \$7/ }).click();
+await k.waitForURL(/dev\/checkout\?extras=/);
+check(await shows(k, "$7"), "checkout charges $7 for one extra job", "wrong extra job price");
+await k.getByRole("button", { name: /Pay \$7/ }).click();
+await k.waitForURL(/extras=1/);
+check(await shows(k, "Extra jobs added"), "extra job confirmed", "extra job not confirmed");
+check((await jobsLeft(k)) === 1, "one job left after buying one extra", "extra job not counted");
+check(await sendQuote(k, job2, 30), "can quote again with an extra job", "still blocked after buying extras");
 
 // --- Upgrade to Pro: takes effect at once ---
 await k.goto(BASE + "/tailor");
 await k.getByRole("button", { name: "Switch to Pro" }).click();
 await k.waitForURL(/tier=/);
 check(await shows(k, "You’re on Pro"), "switched to Pro", "tier not switched");
-check((await jobsLeft(k)) > 0, "Pro allowance applies straight away", "still out of jobs after upgrading");
-check(await sendQuote(k, job2, 30), "can quote again after upgrading", "still blocked after upgrade");
+check((await jobsLeft(k)) > 1, "Pro allowance applies straight away", "Pro allowance missing");
+
+// --- Featured add-on: max 3 per suburb ---
+const others = await db.tailorProfile.findMany({ where: { slug: { in: ["ricci-alterations", "sew-mended", "bondi-quick-stitch"] } } });
+await db.tailorProfile.updateMany({ where: { id: { in: others.map((o) => o.id) } }, data: { suburb: "Kogarah", featuredStatus: "ACTIVE" } });
+await k.goto(BASE + "/tailor");
+check(await shows(k, "All 3 spots in Kogarah are taken"), "Featured full in Kogarah: no spot offered", "cap not shown");
+check((await k.getByRole("button", { name: "Add Featured" }).count()) === 0, "no Add Featured button when full", "could add Featured past the cap");
+await db.tailorProfile.update({ where: { id: others.at(0).id }, data: { featuredStatus: "CANCELED" } });
+await k.reload();
+check(await shows(k, "1 of 3 spots left in Kogarah"), "a spot opens when one stops", "spot count wrong");
+await k.getByRole("button", { name: "Add Featured" }).click();
+await k.waitForURL(/dev\/checkout\?featured=1/);
+await k.getByRole("button", { name: "Subscribe" }).click();
+await k.waitForURL(/featured=1/);
+check(await shows(k, "You’re Featured"), "Featured added", "Featured not added");
+await k.screenshot({ path: SHOTS + "plans-featured-400.png", fullPage: true });
+await c.goto(BASE + "/tailors?suburb=Kogarah");
+const card = c.locator('a[href="/tailors/kogarah-uniforms-alterations"]').first();
+check((await card.locator("text=Featured").count()) > 0, "shown with the Featured label in search", "no Featured label");
+await k.goto(BASE + "/tailor");
+await k.getByRole("button", { name: "Stop Featured" }).click();
+await k.waitForURL(/featured=stopped/);
+check(await shows(k, "Featured is off"), "Featured stopped", "couldn't stop Featured");
 
 // --- Tailor-facing pricing ---
 const anon = await (await (await import("./lib.mjs")).browser.newContext({ viewport: phone })).newPage();
 await anon.goto(BASE + "/for-tailors");
-for (const t of ["$29", "$59", "$149", "$249", "$299", "Pay only for work you win"]) check(await shows(anon, t), `for-tailors shows ${t}`, `for-tailors missing ${t}`);
+for (const t of ["$29", "$59", "$129", "$239", "$7", "$79", "Pay only for work you win"]) check(await shows(anon, t), `for-tailors shows ${t}`, `for-tailors missing ${t}`);
 await anon.screenshot({ path: SHOTS + "plans-for-tailors-400.png", fullPage: true });
 
 const admin = await login("admin@example.com");

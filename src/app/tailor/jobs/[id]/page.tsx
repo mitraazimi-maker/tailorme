@@ -210,15 +210,13 @@ export default async function TailorJob({ params, searchParams }: { params: Prom
                 <p className="small muted">
                   {isTheirRebook
                     ? "A rebook from your own customer: free, it won’t use one of your jobs."
-                    : credits.unlimited
-                      ? "Unlimited plan: no limit on jobs."
-                      : `If they book you, this uses 1 of your ${credits.left} jobs left this month. Quoting is free.`}
+                    : `If they book you, this uses 1 of your ${credits.left} jobs left this month. Quoting is free.`}
                 </p>
               )}
               <IntroNote className="small muted" />
             </form>
           ) : (
-            <div className="panel stack"><p className="muted">{quoteVerdict.reason}</p>{credits && !credits.unlimited && credits.left === 0 && <Link className="btn btn-primary btn-sm" href="/tailor" style={{ alignSelf: "flex-start" }}>See plans</Link>}</div>
+            <div className="panel stack"><p className="muted">{quoteVerdict.reason}</p>{credits && credits.left === 0 && <Link className="btn btn-primary btn-sm" href="/tailor" style={{ alignSelf: "flex-start" }}>Buy extra jobs or upgrade</Link>}</div>
           )}
         </aside>
       </div>

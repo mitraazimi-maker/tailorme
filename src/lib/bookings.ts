@@ -51,3 +51,8 @@ export async function bookedTailorIds(customerId: string, exceptJobId?: string) 
   });
   return new Set(rows.map((r) => r.tailorId));
 }
+
+/** Marks extra jobs paid. Idempotent: Stripe may deliver the webhook twice. */
+export async function confirmExtraJobs(purchaseId: string) {
+  await db.extraJobsPurchase.updateMany({ where: { id: purchaseId, status: "PENDING" }, data: { status: "PAID", paidAt: new Date() } });
+}

@@ -1,21 +1,21 @@
-// Contact-detail blocking, the Unlimited head start, exclusive rebooks, reports and suspension.
+// Contact-detail blocking, the Featured head start, exclusive rebooks, reports and suspension.
 import { BASE, book, check, done, login, phone, postJob, sendQuote, shows } from "./lib.mjs";
 
 const c = await login("customer@example.com", phone);
 check((await postJob(c, { description: "Hem please, call me on 0412 345 678" })) === null, "job refused", "leaky job posted");
 check(((await c.locator(".err").textContent()) ?? "").includes("phone number"), "phone number blocked in job description", "description leak not blocked");
 
-// Head start skipped when no Unlimited tailor matches (no sample Unlimited tailor does uniforms).
+// Head start skipped when no Featured tailor matches (no sample Featured tailor does uniforms).
 const uniformJob = await postJob(c, { garment: "School / work uniform", description: "Two school dresses to take up 5 cm each." });
 const kog = await login("kogarah@example.com");
 await kog.goto(BASE + "/tailor/jobs");
-check(await kog.locator(`a[href="/tailor/jobs/${uniformJob}"]`).count(), "no Unlimited match: Starter tailor sees the job at once", "Starter tailor held back with no Unlimited match");
+check(await kog.locator(`a[href="/tailor/jobs/${uniformJob}"]`).count(), "no Featured match: Starter tailor sees the job at once", "Starter tailor held back with no Featured match");
 
 const hemJob = await postJob(c);
 const ricci = await login("ricci@example.com");
 await ricci.goto(BASE + "/tailor/jobs");
-check((await ricci.locator(`a[href="/tailor/jobs/${hemJob}"]`).count()) === 0, "Unlimited match: head start applies to Pro", "head start missing when Unlimited matches");
-check(await shows(ricci, "Unlimited head start"), "held jobs explained", "no head start note");
+check((await ricci.locator(`a[href="/tailor/jobs/${hemJob}"]`).count()) === 0, "Featured match: head start applies to Pro", "head start missing when Featured matches");
+check(await shows(ricci, "Featured head start"), "held jobs explained", "no head start note");
 
 const linh = await login("linhs@example.com");
 check(!(await sendQuote(linh, hemJob, 60, "Text me on 0412 345 678 to sort it out")), "quote refused", "leaky quote sent");
@@ -40,7 +40,7 @@ const rebookJob = await postJob(c, { garment: "Jacket / coat", work: "Replace zi
 
 const mariam = await login("mariams@example.com");
 await mariam.goto(BASE + "/tailor/jobs?all=1");
-check((await mariam.locator(`a[href="/tailor/jobs/${rebookJob}"]`).count()) === 0, "rebook hidden from other tailors (even Unlimited)", "rebook visible to other tailors");
+check((await mariam.locator(`a[href="/tailor/jobs/${rebookJob}"]`).count()) === 0, "rebook hidden from other tailors (even Featured)", "rebook visible to other tailors");
 await mariam.goto(`${BASE}/tailor/jobs/${rebookJob}`);
 check(await mariam.locator("text=sent this job to their own tailor").count(), "other tailor's job page is gated", "rebook job page not gated");
 await linh.goto(BASE + "/tailor/jobs");

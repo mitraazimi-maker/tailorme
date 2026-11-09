@@ -7,12 +7,12 @@ import { isValidAbn, lookupAbn, normaliseAbn } from "@/lib/abn";
 import { MAX_PORTFOLIO_PHOTOS, isCategory } from "@/lib/catalog";
 import { db } from "@/lib/db";
 import { notify } from "@/lib/notify";
-import { billingPortalUrl, changeClubTier, clubCheckoutUrl, paymentsMode } from "@/lib/payments";
-import { canQuote, isClubMember, isUnlimited, isSuspended } from "@/lib/rules";
+import { billingPortalUrl, cancelFeatured, changeClubTier, clubCheckoutUrl, extraJobsCheckoutUrl, featuredCheckoutUrl, paymentsMode } from "@/lib/payments";
+import { activeMemberWhere, canQuote, isClubMember, isFeatured, isSuspended } from "@/lib/rules";
 import { MAX_PHOTO_BYTES, savePhoto, sniffImage } from "@/lib/storage";
 import { contactRefusal, findContactDetails } from "@/lib/contact-filter";
 import { findSuburb } from "@/lib/suburbs";
-import { TIERS } from "@/lib/plans";
+import { EXTRA_JOB_PACKS, FEATURED, TIERS, extraJobsCents, featuredSpotsLeft, monthKey } from "@/lib/plans";
 import { creditsForTailor } from "@/lib/credits";
 import type { ClubTier } from "@prisma/client";
 import { canRecordFit, parseFit } from "@/lib/fit";
@@ -208,7 +208,7 @@ export async function joinClub(form: FormData) {
   redirect(await clubCheckoutUrl({ tailorId: tailor.id, email: user.email, stripeCustomerId: tailor.stripeCustomerId, tier: tierFrom(form) }));
 }
 
-/** Move between Starter, Pro and Unlimited, for a tailor who's already a member. Takes effect at once. */
+/** Move between plans, for a tailor who's already a member. Takes effect at once. */
 export async function changeTier(form: FormData) {
   const { tailor } = await requireTailor("/tailor");
   const tier = tierFrom(form);
@@ -224,7 +224,7 @@ export async function changeTier(form: FormData) {
 
 export async function addPortfolioPhotos(form: FormData) {
   const { tailor } = await requireTailor("/tailor/profile");
-  if (!isUnlimited(tailor)) back("/tailor/profile", "The portfolio is part of Unlimited.");
+  if (!isFeatured(tailor)) back("/tailor/profile", "The portfolio comes with the Featured add-on.");
   const existing = await db.portfolioPhoto.count({ where: { tailorId: tailor.id } });
   const files = form.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0);
   if (!files.length) back("/tailor/profile", "Choose at least one photo.");
@@ -253,4 +253,43 @@ export async function manageBilling() {
   const { tailor } = await requireTailor("/tailor");
   if (paymentsMode() === "simulate" || !tailor.stripeCustomerId) redirect("/tailor");
   redirect(await billingPortalUrl(tailor.stripeCustomerId));
+}
+
+/** Other tailors in this suburb with Featured live (the cap is per suburb). */
+export async function featuredInSuburb(suburb: string, exceptTailorId: string) {
+  return db.tailorProfile.count({ where: { ...activeMemberWhere(), suburb, featuredStatus: "ACTIVE", id: { not: exceptTailorId } } });
+}
+
+/** The Featured add-on: $79/month on top of any plan, max 3 tailors per suburb. */
+export async function joinFeatured() {
+  const { user, tailor } = await requireTailor("/tailor");
+  if (!isClubMember(tailor)) back("/tailor", "Join a Club plan first. Featured is an add-on to a plan.");
+  if (tailor.featuredStatus === "ACTIVE") redirect("/tailor");
+  if (!featuredSpotsLeft(await featuredInSuburb(tailor.suburb, tailor.id)))
+    back("/tailor", `${FEATURED.perSuburb} tailors in ${tailor.suburb} already have Featured. We’ll let you know when a spot opens.`);
+  redirect(await featuredCheckoutUrl({ tailorId: tailor.id, email: user.email, stripeCustomerId: tailor.stripeCustomerId }));
+}
+
+export async function stopFeatured() {
+  const { tailor } = await requireTailor("/tailor");
+  if (tailor.featuredStatus !== "ACTIVE") redirect("/tailor");
+  if (paymentsMode() === "stripe") {
+    // Runs to the end of the month already paid for; the webhook switches it off then.
+    if (tailor.featuredSubscriptionId) await cancelFeatured(tailor.featuredSubscriptionId);
+    redirect("/tailor?featured=ending");
+  }
+  await db.tailorProfile.update({ where: { id: tailor.id }, data: { featuredStatus: "CANCELED", featuredRenewsAt: null } });
+  redirect("/tailor?featured=stopped");
+}
+
+/** Extra jobs for this month, $7 each, so a tailor never has to stop quoting. */
+export async function buyExtraJobs(form: FormData) {
+  const { user, tailor } = await requireTailor("/tailor");
+  if (!isClubMember(tailor)) back("/tailor", "Join a Club plan first.");
+  const jobs = Number(form.get("jobs"));
+  if (!(EXTRA_JOB_PACKS as readonly number[]).includes(jobs)) back("/tailor", "Choose how many extra jobs.");
+  const purchase = await db.extraJobsPurchase.create({ data: { tailorId: tailor.id, jobs, amountCents: extraJobsCents(jobs), month: monthKey(new Date()) } });
+  const { url, sessionId } = await extraJobsCheckoutUrl({ purchaseId: purchase.id, email: user.email, stripeCustomerId: tailor.stripeCustomerId, jobs });
+  if (sessionId) await db.extraJobsPurchase.update({ where: { id: purchase.id }, data: { stripeSessionId: sessionId } });
+  redirect(url);
 }

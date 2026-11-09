@@ -1,33 +1,47 @@
-// tailor me Club tiers (decided 9 Nov 2026): Starter 5 jobs $29, Pro 10 $59, Busy 25 $149,
-// Studio 50 $249, Unlimited $299. Customers pay nothing; tailors pay a
-// monthly membership that includes a number of jobs won. A job is "used" only
-// when a customer books the tailor (never for a quote that loses), and rebooks
-// from a customer who booked them before are always free. Unused jobs roll over
-// for one month. Pure, unit tested.
+// tailor me Club tiers (decided 9 Nov 2026). Customers pay nothing; tailors pay a
+// monthly plan that includes a number of jobs won. A job is "used" only when a
+// customer books the tailor (never for a quote that loses), and rebooks from a
+// customer who booked them before are always free. Unused plan jobs roll over for
+// one month. There's no unlimited plan: past the allowance a tailor buys extra jobs
+// at EXTRA_JOB_CENTS each, valid for that month. Featured is a separate add-on on
+// any plan, capped per suburb. Pure, unit tested.
 import type { ClubTier } from "@prisma/client";
 
-export type Plan = { tier: ClubTier; name: string; priceCents: number; jobs: number | null; perks: string[] };
+export type Plan = { tier: ClubTier; name: string; priceCents: number; jobs: number };
 
 export const PLANS: Record<ClubTier, Plan> = {
-  STARTER: { tier: "STARTER", name: "Starter", priceCents: 2900, jobs: 5, perks: [] },
-  PRO: { tier: "PRO", name: "Pro", priceCents: 5900, jobs: 10, perks: [] },
-  BUSY: { tier: "BUSY", name: "Busy", priceCents: 14900, jobs: 25, perks: [] },
-  STUDIO: { tier: "STUDIO", name: "Studio", priceCents: 24900, jobs: 50, perks: [] },
-  UNLIMITED: {
-    tier: "UNLIMITED",
-    name: "Unlimited",
-    priceCents: 29900,
-    jobs: null,
-    perks: ["Featured first in search (labelled as paid placement)", "15-minute head start on new matching jobs", "Portfolio gallery, up to 12 photos"],
-  },
+  STARTER: { tier: "STARTER", name: "Starter", priceCents: 2900, jobs: 5 },
+  PRO: { tier: "PRO", name: "Pro", priceCents: 5900, jobs: 12 },
+  BUSY: { tier: "BUSY", name: "Busy", priceCents: 12900, jobs: 25 },
+  STUDIO: { tier: "STUDIO", name: "Studio", priceCents: 23900, jobs: 50 },
 };
-export const TIERS: ClubTier[] = ["STARTER", "PRO", "BUSY", "STUDIO", "UNLIMITED"];
+export const TIERS: ClubTier[] = ["STARTER", "PRO", "BUSY", "STUDIO"];
 
-export const planPriceLabel = (tier: ClubTier) => `$${PLANS[tier].priceCents / 100}/month`;
-export const planJobsLabel = (tier: ClubTier) => {
-  const n = PLANS[tier].jobs;
-  return n == null ? "Unlimited jobs" : `${n} jobs a month`;
-};
+/** One extra job, bought when the plan's jobs run out. Set just above the next plan's rate, so upgrading is the better deal for regular overflow. */
+export const EXTRA_JOB_CENTS = 700;
+export const EXTRA_JOB_PACKS = [1, 5, 10] as const;
+export const extraJobsCents = (jobs: number) => jobs * EXTRA_JOB_CENTS;
+
+/** The Featured add-on: featured placement, the head start and the portfolio. */
+export const FEATURED = {
+  priceCents: 7900,
+  perSuburb: 3,
+  perks: ["Featured first in search (labelled as paid placement)", "15-minute head start on new matching jobs", "Portfolio gallery, up to 12 photos"],
+} as const;
+/** Spots left for Featured in a suburb, given how many other tailors there already have it. */
+export const featuredSpotsLeft = (othersFeaturedInSuburb: number) => Math.max(0, FEATURED.perSuburb - othersFeaturedInSuburb);
+
+export const money0 = (cents: number) => `$${(cents / 100).toLocaleString("en-AU")}`;
+export const planPriceLabel = (tier: ClubTier) => `${money0(PLANS[tier].priceCents)}/month`;
+export const planJobsLabel = (tier: ClubTier) => `${PLANS[tier].jobs} jobs a month`;
+
+/** The cheapest way to cover `jobs` new jobs in a month: a plan plus any extra jobs. */
+export function cheapestFor(jobs: number): { tier: ClubTier; extras: number; cents: number } {
+  return TIERS.map((tier) => {
+    const extras = Math.max(0, jobs - PLANS[tier].jobs);
+    return { tier, extras, cents: PLANS[tier].priceCents + extraJobsCents(extras) };
+  }).reduce((best, x) => (x.cents < best.cents ? x : best));
+}
 
 /** Sydney calendar month, e.g. "2026-11". Credits reset on the 1st. */
 export function monthKey(d: Date): string {
@@ -67,32 +81,30 @@ export function rollover(allowance: number, usedLastMonth: number, carriedIntoLa
   return Math.max(0, Math.min(allowance, allowance - fromOwn));
 }
 
-export type Credits = { unlimited: true } | { unlimited: false; allowance: number; carried: number; used: number; left: number };
+export type Credits = { allowance: number; carried: number; extras: number; used: number; left: number };
 
 /**
- * Jobs left this month. Uses the tailor's current tier for the months before
- * (an upgrade takes effect at once). `used` counts are new bookings won, not rebooks.
- * Only months the tailor was a member carry anything over (`clubSince`).
+ * Jobs left this month: the plan's allowance, plus unused plan jobs from last month,
+ * plus extra jobs bought this month, less new bookings won. Uses the tailor's current
+ * tier for the months before (an upgrade takes effect at once). `used` counts are new
+ * bookings won, not rebooks. Only months the tailor was a member carry anything over.
  */
 export function creditsFor(
   tier: ClubTier,
   used: { thisMonth: number; lastMonth: number; monthBefore: number },
   clubSince: Date | null,
   now = new Date(),
+  extras = 0,
 ): Credits {
   const allowance = PLANS[tier].jobs;
-  if (allowance == null) return { unlimited: true };
   const thisKey = monthKey(now);
   const lastKey = prevMonthKey(thisKey);
   const joined = clubSince ? monthKey(clubSince) : thisKey;
   const memberIn = (key: string) => joined <= key;
   const carriedIntoLast = memberIn(prevMonthKey(lastKey)) ? rollover(allowance, used.monthBefore, 0) : 0;
   const carried = memberIn(lastKey) ? rollover(allowance, used.lastMonth, carriedIntoLast) : 0;
-  const left = Math.max(0, allowance + carried - used.thisMonth);
-  return { unlimited: false, allowance, carried, used: used.thisMonth, left };
+  const left = Math.max(0, allowance + carried + extras - used.thisMonth);
+  return { allowance, carried, extras, used: used.thisMonth, left };
 }
 
-export const hasCredit = (c: Credits) => c.unlimited || c.left > 0;
-
-/** Featured placement, the head start and the portfolio come with Unlimited. */
-export const hasTopPerks = (tier: ClubTier) => tier === "UNLIMITED";
+export const hasCredit = (c: Credits) => c.left > 0;

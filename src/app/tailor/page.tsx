@@ -1,21 +1,21 @@
 import Link from "next/link";
-import { changeTier, joinClub, manageBilling } from "@/app/actions/tailor";
+import { buyExtraJobs, changeTier, featuredInSuburb, joinClub, joinFeatured, manageBilling, stopFeatured } from "@/app/actions/tailor";
 import { Status } from "@/components/ui";
 import { requireTailor } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { money } from "@/lib/fabric";
 import { paymentsMode } from "@/lib/payments";
-import { CreditsMeter, PlanCards } from "@/components/plans";
+import { CreditsMeter, ExtraJobsForm, FeaturedCard, PlanCards } from "@/components/plans";
 import { creditsForTailor } from "@/lib/credits";
-import { PLANS, hasCredit, planPriceLabel, resetLabel } from "@/lib/plans";
-import { isClubMember, isUnlimited, isSuspended } from "@/lib/rules";
+import { PLANS, cheapestFor, featuredSpotsLeft, hasCredit, money0, planPriceLabel, resetLabel } from "@/lib/plans";
+import { isClubMember, isFeatured, isSuspended } from "@/lib/rules";
 import { TailorTabs } from "./TailorTabs";
 
 export const metadata = { title: "Tailor dashboard" };
 
-export default async function TailorHome({ searchParams }: { searchParams: Promise<{ club?: string; tier?: string }> }) {
+export default async function TailorHome({ searchParams }: { searchParams: Promise<{ club?: string; tier?: string; featured?: string; extras?: string; error?: string }> }) {
   const { tailor } = await requireTailor();
-  const { club, tier } = await searchParams;
+  const { club, tier, featured, extras, error } = await searchParams;
   const [services, quotes, bookings] = await Promise.all([
     db.service.count({ where: { tailorId: tailor.id } }),
     db.quote.findMany({ where: { tailorId: tailor.id, status: "PENDING" }, include: { job: true }, orderBy: { createdAt: "desc" }, take: 10 }),
@@ -35,6 +35,9 @@ export default async function TailorHome({ searchParams }: { searchParams: Promi
   const member = isClubMember(tailor);
   const suspended = isSuspended(tailor);
   const credits = member ? await creditsForTailor(tailor) : null;
+  const spots = featuredSpotsLeft(await featuredInSuburb(tailor.suburb, tailor.id));
+  // Bought extras two months running? Say which plan would be cheaper.
+  const better = credits && credits.extras > 0 ? cheapestFor(credits.used) : null;
   const warnings = await db.conductReport.findMany({ where: { tailorId: tailor.id, status: "WARNED" }, orderBy: { resolvedAt: "desc" }, take: 3 });
 
   return (
@@ -54,10 +57,15 @@ export default async function TailorHome({ searchParams }: { searchParams: Promi
           <b style={{ color: "var(--ink)" }}>Warning on your account:</b> {warnings[0].adminNote} A further upheld report of booking customers outside tailor me means a 6-month suspension.
         </div>
       )}
-      {tier && member && <p className="notice ok" style={{ marginBottom: 16 }}>You’re on {PLANS[tailor.clubTier].name} at {planPriceLabel(tailor.clubTier)}.{isUnlimited(tailor) && " You’re featured in search and get first look at new jobs."}</p>}
+      {error && <p className="notice bad" role="alert" style={{ marginBottom: 16 }}>{error}</p>}
+      {tier && member && <p className="notice ok" style={{ marginBottom: 16 }}>You’re on {PLANS[tailor.clubTier].name} at {planPriceLabel(tailor.clubTier)}.</p>}
+      {featured === "1" && isFeatured(tailor) && <p className="notice ok" style={{ marginBottom: 16 }}>You’re Featured. You show first in search in your area and get first look at new jobs.</p>}
+      {featured === "stopped" && <p className="notice ok" style={{ marginBottom: 16 }}>Featured is off.</p>}
+      {featured === "ending" && <p className="notice ok" style={{ marginBottom: 16 }}>Featured will stop at the end of the month you’ve paid for.</p>}
+      {extras && <p className="notice ok" style={{ marginBottom: 16 }}>Extra jobs added. They’re yours until {resetLabel()}.</p>}
       {credits && !hasCredit(credits) && (
         <div className="notice bad" role="alert" style={{ marginBottom: 16 }}>
-          <b style={{ color: "var(--ink)" }}>You’ve used this month’s jobs.</b> You can’t quote on new jobs until {resetLabel()}, or switch to a bigger plan now. Rebooks from your own customers are always free, and quotes you’ve already sent can still be booked.
+          <b style={{ color: "var(--ink)" }}>You’ve used this month’s jobs.</b> Buy extra jobs or move up a plan to keep quoting now, or wait until {resetLabel()}. Rebooks from your own customers are always free, and quotes you’ve already sent can still be booked.
         </div>
       )}
 
@@ -120,6 +128,10 @@ export default async function TailorHome({ searchParams }: { searchParams: Promi
             </p>
           )}
           {credits && <CreditsMeter credits={credits} />}
+          {credits && <ExtraJobsForm action={buyExtraJobs} />}
+          {better && better.tier !== tailor.clubTier && PLANS[better.tier].priceCents > PLANS[tailor.clubTier].priceCents && (
+            <p className="notice small">At {credits!.used} jobs a month, {PLANS[better.tier].name} ({money0(PLANS[better.tier].priceCents)}) costs less than your plan plus extra jobs.</p>
+          )}
           {!member && !suspended && (
             <>
               <p className="muted small">Join to appear in search, see job photos and quote. Quote as often as you like: a job is used only when a customer books you, and rebooks are free. Unused jobs roll over for a month.</p>
@@ -128,6 +140,9 @@ export default async function TailorHome({ searchParams }: { searchParams: Promi
           )}
           {!suspended && <PlanCards current={member ? tailor.clubTier : null} action={member ? changeTier : joinClub} verb={member ? "switch" : "join"} />}
           {member && <span className="small muted">Switching takes effect straight away; the price difference is prorated.</span>}
+          {!suspended && (
+            <FeaturedCard active={isFeatured(tailor)} renewsAt={tailor.featuredRenewsAt} spotsLeft={spots} suburb={tailor.suburb} join={joinFeatured} stop={stopFeatured} canJoin={member} />
+          )}
           {member && paymentsMode() === "stripe" && tailor.stripeCustomerId && <form action={manageBilling}><button className="btn btn-ghost btn-sm">Manage billing</button></form>}
           <hr style={{ border: 0, borderTop: "1px solid var(--line)", width: "100%" }} />
           <b>The tailor me standard</b>

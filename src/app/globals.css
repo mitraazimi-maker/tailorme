@@ -381,3 +381,4 @@ button.link.small{font-size:14px;color:var(--ink-2)}
 .credits{display:flex;flex-direction:column;gap:8px}
 .credits-bar{height:6px;border-radius:9999px;background:var(--line);overflow:hidden}
 .credits-bar span{display:block;height:100%;background:var(--tape)}
+.extras{display:flex;flex-direction:column;gap:8px}
