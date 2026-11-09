@@ -22,6 +22,14 @@ export const EXTRA_JOB_CENTS = 700;
 export const EXTRA_JOB_PACKS = [1, 5, 10] as const;
 export const extraJobsCents = (jobs: number) => jobs * EXTRA_JOB_CENTS;
 
+/** Pilot tailors: the Club plan (not extra jobs or Featured) is free for the first 2 months. */
+export const PILOT = { freeDays: 60, maxTailors: 15 } as const;
+export const pilotFreeUntil = (from: Date) => new Date(from.getTime() + PILOT.freeDays * 864e5);
+/** Whether the plan is in its free period right now. */
+export const inFreePeriod = (freeUntil: Date | null | undefined, now = new Date()) => !!freeUntil && freeUntil > now;
+/** A pilot tailor who hasn't started their free period yet gets it when they join. */
+export const getsPilotTrial = (t: { pilot: boolean; freeUntil: Date | null }) => t.pilot && !t.freeUntil;
+
 /** The Featured add-on: featured placement, the head start and the portfolio. */
 export const FEATURED = {
   priceCents: 7900,

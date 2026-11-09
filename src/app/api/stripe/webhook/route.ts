@@ -56,6 +56,8 @@ async function syncSubscription(sub: Stripe.Subscription, tailorId: string | und
       stripeCustomerId: customer,
       stripeSubscriptionId: sub.id,
       clubRenewsAt: periodEnd ? new Date(periodEnd * 1000) : null,
+      // A pilot tailor's free period is a Stripe trial.
+      ...(sub.trial_end ? { freeUntil: new Date(sub.trial_end * 1000) } : {}),
     },
   });
   // First time active: start the clock for rolling over unused jobs.

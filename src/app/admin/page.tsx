@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { liftSuspension, resolveReport, setAbnStatus } from "@/app/actions/admin";
+import { liftSuspension, resolveReport, setAbnStatus, setPilot } from "@/app/actions/admin";
 import { Status } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
 import { formatAbn } from "@/lib/abn";
 import { db } from "@/lib/db";
 import { SUSPENSION_MONTHS } from "@/lib/catalog";
 import { activeMemberWhere, isClubMember, isSuspended } from "@/lib/rules";
-import { FEATURED, PLANS } from "@/lib/plans";
+import { FEATURED, PILOT, PLANS, inFreePeriod } from "@/lib/plans";
 
 export const metadata = { title: "Admin" };
 
@@ -26,7 +26,9 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
     db.conductReport.groupBy({ by: ["tailorId", "status"], where: { status: { not: "OPEN" } }, _count: true }),
   ]);
   // Monthly recurring revenue: every active member's plan price.
-  const mrr = tailors.filter((t) => isClubMember(t)).reduce((sum, t) => sum + PLANS[t.clubTier].priceCents + (t.featuredStatus === "ACTIVE" ? FEATURED.priceCents : 0), 0);
+  // Pilot tailors in their free period pay nothing for the plan.
+  const mrr = tailors.filter((t) => isClubMember(t)).reduce((sum, t) => sum + (inFreePeriod(t.freeUntil) ? 0 : PLANS[t.clubTier].priceCents) + (t.featuredStatus === "ACTIVE" ? FEATURED.priceCents : 0), 0);
+  const pilots = tailors.filter((t) => t.pilot).length;
   const past = (tailorId: string) =>
     history.filter((h) => h.tailorId === tailorId && h.status !== "DISMISSED").map((h) => `${h._count} ${h.status.toLowerCase()}`).join(", ") || "none";
   return (
@@ -79,7 +81,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
           Check each ABN on <a className="link" href="https://abr.business.gov.au/" target="_blank" rel="noreferrer">ABN Lookup</a>: it must be active and the name should match. Only then mark it checked. The badge reads “ABN checked”, nothing stronger.
         </p>
         <table className="table">
-          <thead><tr><th>Tailor</th><th>ABN</th><th>Club</th><th>ABN check</th></tr></thead>
+          <thead><tr><th>Tailor</th><th>ABN</th><th>Club</th><th>Pilot ({pilots}/{PILOT.maxTailors})</th><th>ABN check</th></tr></thead>
           <tbody>
             {tailors.map((t) => (
               <tr key={t.id}>
@@ -95,6 +97,19 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
                       <button className="btn btn-ghost btn-sm">Lift suspension</button>
                     </form>
                   )}
+                </td>
+                <td>
+                  <form action={setPilot}>
+                    <input type="hidden" name="tailorId" value={t.id} />
+                    {t.pilot ? (
+                      <>
+                        <span className="small">{t.freeUntil ? `Free until ${t.freeUntil.toLocaleDateString("en-AU", { day: "numeric", month: "short" })}` : "Free 2 months from joining"}</span>
+                        {!t.freeUntil && <button className="btn btn-ghost btn-sm" name="pilot" value="off" style={{ marginTop: 6 }}>Remove</button>}
+                      </>
+                    ) : (
+                      pilots < PILOT.maxTailors && <button className="btn btn-ghost btn-sm" name="pilot" value="on" aria-label={`Make ${t.businessName} a pilot tailor`}>Make pilot</button>
+                    )}
+                  </form>
                 </td>
                 <td>
                   <form action={setAbnStatus} className="row-wrap">

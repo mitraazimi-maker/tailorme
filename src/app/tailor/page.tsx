@@ -7,7 +7,7 @@ import { money } from "@/lib/fabric";
 import { paymentsMode } from "@/lib/payments";
 import { CreditsMeter, ExtraJobsForm, FeaturedCard, PlanCards } from "@/components/plans";
 import { creditsForTailor } from "@/lib/credits";
-import { PLANS, cheapestFor, featuredSpotsLeft, hasCredit, money0, planPriceLabel, resetLabel } from "@/lib/plans";
+import { PILOT, PLANS, cheapestFor, featuredSpotsLeft, getsPilotTrial, hasCredit, inFreePeriod, money0, planPriceLabel, resetLabel } from "@/lib/plans";
 import { isClubMember, isFeatured, isSuspended } from "@/lib/rules";
 import { TailorTabs } from "./TailorTabs";
 
@@ -58,6 +58,11 @@ export default async function TailorHome({ searchParams }: { searchParams: Promi
         </div>
       )}
       {error && <p className="notice bad" role="alert" style={{ marginBottom: 16 }}>{error}</p>}
+      {getsPilotTrial(tailor) && !member && !suspended && (
+        <p className="notice ok" style={{ marginBottom: 16 }}>
+          <b style={{ color: "var(--ink)" }}>You’re a tailor me pilot tailor.</b> Your plan is free for your first {PILOT.freeDays / 30} months, whichever plan you choose. Cancel before then and you pay nothing. Extra jobs and Featured are charged as normal.
+        </p>
+      )}
       {tier && member && <p className="notice ok" style={{ marginBottom: 16 }}>You’re on {PLANS[tailor.clubTier].name} at {planPriceLabel(tailor.clubTier)}.</p>}
       {featured === "1" && isFeatured(tailor) && <p className="notice ok" style={{ marginBottom: 16 }}>You’re Featured. You show first in search in your area and get first look at new jobs.</p>}
       {featured === "stopped" && <p className="notice ok" style={{ marginBottom: 16 }}>Featured is off.</p>}
@@ -123,8 +128,11 @@ export default async function TailorHome({ searchParams }: { searchParams: Promi
           </div>
           {member && (
             <p className="muted small">
-              {planPriceLabel(tailor.clubTier)}. Customers book you for free; you never pay commission or per quote.
-              {tailor.clubRenewsAt && ` Renews ${tailor.clubRenewsAt.toLocaleDateString("en-AU", { day: "numeric", month: "short" })}.`}
+              {inFreePeriod(tailor.freeUntil)
+                ? `Free until ${tailor.freeUntil!.toLocaleDateString("en-AU", { day: "numeric", month: "long" })} as a pilot tailor, then ${planPriceLabel(tailor.clubTier)}.`
+                : `${planPriceLabel(tailor.clubTier)}.`}{" "}
+              Customers book you for free; you never pay commission or per quote.
+              {tailor.clubRenewsAt && !inFreePeriod(tailor.freeUntil) && ` Renews ${tailor.clubRenewsAt.toLocaleDateString("en-AU", { day: "numeric", month: "short" })}.`}
             </p>
           )}
           {credits && <CreditsMeter credits={credits} />}
@@ -138,7 +146,7 @@ export default async function TailorHome({ searchParams }: { searchParams: Promi
               {tailor.clubStatus === "PAST_DUE" && <p className="notice bad">Your last payment didn’t go through. Update your card to stay listed.</p>}
             </>
           )}
-          {!suspended && <PlanCards current={member ? tailor.clubTier : null} action={member ? changeTier : joinClub} verb={member ? "switch" : "join"} />}
+          {!suspended && <PlanCards current={member ? tailor.clubTier : null} action={member ? changeTier : joinClub} verb={member ? "switch" : "join"} freeTrial={!member && getsPilotTrial(tailor)} />}
           {member && <span className="small muted">Switching takes effect straight away; the price difference is prorated.</span>}
           {!suspended && (
             <FeaturedCard active={isFeatured(tailor)} renewsAt={tailor.featuredRenewsAt} spotsLeft={spots} suburb={tailor.suburb} join={joinFeatured} stop={stopFeatured} canJoin={member} />

@@ -3,7 +3,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { SUSPENSION_MONTHS } from "@/lib/catalog";
 import { notify } from "@/lib/notify";
-import { paymentsMode, stripe } from "@/lib/payments";
+import { freeUntilOnSubscription, paymentsMode, stripe } from "@/lib/payments";
+import { PILOT, pilotFreeUntil } from "@/lib/plans";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 
@@ -62,5 +63,31 @@ export async function resolveReport(form: FormData) {
 export async function liftSuspension(form: FormData) {
   await requireAdmin();
   await db.tailorProfile.update({ where: { id: String(form.get("tailorId")) }, data: { suspendedUntil: null, suspensionReason: null } });
+  revalidatePath("/admin");
+}
+
+/**
+ * Picks a tailor for the pilot: their Club plan is free for the first 2 months.
+ * Not yet a member: the free period starts when they join. Already paying: it starts now.
+ * Once a free period has started it can't be taken back.
+ */
+export async function setPilot(form: FormData) {
+  await requireAdmin();
+  const tailor = await db.tailorProfile.findUnique({ where: { id: String(form.get("tailorId")) } });
+  if (!tailor) redirect("/admin");
+  if (form.get("pilot") !== "on") {
+    if (!tailor.freeUntil) await db.tailorProfile.update({ where: { id: tailor.id }, data: { pilot: false } });
+    revalidatePath("/admin");
+    return;
+  }
+  if (tailor.pilot) redirect("/admin");
+  if ((await db.tailorProfile.count({ where: { pilot: true } })) >= PILOT.maxTailors)
+    redirect("/admin?error=" + encodeURIComponent(`The pilot is full (${PILOT.maxTailors} tailors).`));
+  let freeUntil: Date | null = null;
+  if (tailor.clubStatus === "ACTIVE" && !tailor.freeUntil) {
+    freeUntil = pilotFreeUntil(new Date());
+    if (paymentsMode() === "stripe" && tailor.stripeSubscriptionId) await freeUntilOnSubscription(tailor.stripeSubscriptionId, freeUntil);
+  }
+  await db.tailorProfile.update({ where: { id: tailor.id }, data: { pilot: true, ...(freeUntil ? { freeUntil, clubRenewsAt: freeUntil } : {}) } });
   revalidatePath("/admin");
 }

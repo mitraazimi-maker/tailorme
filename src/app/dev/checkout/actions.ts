@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { paymentsMode } from "@/lib/payments";
-import { TIERS } from "@/lib/plans";
+import { TIERS, getsPilotTrial, pilotFreeUntil } from "@/lib/plans";
 import { confirmExtraJobs } from "@/lib/bookings";
 import type { ClubTier } from "@prisma/client";
 
@@ -17,7 +17,15 @@ export async function simulateClubPayment(form: FormData) {
   const clubTier = TIERS.includes(asked) ? asked : "STARTER";
   await db.tailorProfile.update({
     where: { id: user.tailor.id },
-    data: { clubStatus: "ACTIVE", clubTier, clubRenewsAt: new Date(Date.now() + 30 * 864e5), clubSince: user.tailor.clubSince ?? new Date() },
+    data: {
+      clubStatus: "ACTIVE",
+      clubTier,
+      clubSince: user.tailor.clubSince ?? new Date(),
+      // A pilot tailor's first payment is after the free period.
+      ...(getsPilotTrial(user.tailor)
+        ? { freeUntil: pilotFreeUntil(new Date()), clubRenewsAt: pilotFreeUntil(new Date()) }
+        : { clubRenewsAt: new Date(Date.now() + 30 * 864e5) }),
+    },
   });
   redirect("/tailor?club=1");
 }

@@ -51,7 +51,7 @@ export const tierForPriceId = (priceId: string | undefined): ClubTier =>
   (Object.keys(PRICE_ENV) as ClubTier[]).find((t) => priceId && process.env[PRICE_ENV[t]] === priceId) ?? "STARTER";
 
 /** Returns the URL to send a tailor to for a new Club subscription at the chosen tier. */
-export async function clubCheckoutUrl(args: { tailorId: string; email: string; stripeCustomerId: string | null; tier: ClubTier }) {
+export async function clubCheckoutUrl(args: { tailorId: string; email: string; stripeCustomerId: string | null; tier: ClubTier; trialDays?: number }) {
   if (paymentsMode() === "simulate") return `/dev/checkout?club=${args.tier.toLowerCase()}`;
   const price = priceIdFor(args.tier);
   const session = await stripe().checkout.sessions.create({
@@ -60,7 +60,7 @@ export async function clubCheckoutUrl(args: { tailorId: string; email: string; s
     ...(args.stripeCustomerId ? { customer: args.stripeCustomerId } : { customer_email: args.email }),
     client_reference_id: args.tailorId,
     metadata: { kind: "club", tailorId: args.tailorId, tier: args.tier },
-    subscription_data: { metadata: { tailorId: args.tailorId } },
+    subscription_data: { metadata: { tailorId: args.tailorId }, ...(args.trialDays ? { trial_period_days: args.trialDays } : {}) },
     success_url: `${appUrl()}/tailor?club=1`,
     cancel_url: `${appUrl()}/tailor`,
   });
@@ -122,4 +122,9 @@ export async function extraJobsCheckoutUrl(args: { purchaseId: string; email: st
     cancel_url: `${appUrl()}/tailor`,
   });
   return { url: session.url!, sessionId: session.id };
+}
+
+/** Makes an existing Club subscription free until `until` (a pilot tailor who joined before being picked). */
+export async function freeUntilOnSubscription(subscriptionId: string, until: Date) {
+  return stripe().subscriptions.update(subscriptionId, { trial_end: Math.floor(until.getTime() / 1000), proration_behavior: "none" });
 }

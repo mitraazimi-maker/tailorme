@@ -75,4 +75,4 @@ src/app/api                job upload, private photos, Stripe webhook
 
 ## Browser checks
 
-`e2e/` holds end-to-end checks that drive the app in Chromium (Playwright): pricing and jobs (`plans.mjs`), the job form (`post.mjs`), the fit record (`fit.mjs`) and the product rules (`rules.mjs`). With the app running on :3000 (`npm run build && npm start`), run `npm run e2e`. Each file reseeds the sample data first. Screenshots land in `e2e/shots/` (ignored by git).
+`e2e/` holds end-to-end checks that drive the app in Chromium (Playwright): pricing and jobs (`plans.mjs`), pilot tailors (`pilot.mjs`), the job form (`post.mjs`), the fit record (`fit.mjs`) and the product rules (`rules.mjs`). With the app running on :3000 (`npm run build && npm start`), run `npm run e2e`. Each file reseeds the sample data first. Screenshots land in `e2e/shots/` (ignored by git).

@@ -4,7 +4,7 @@ import type { ClubTier } from "@prisma/client";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { paymentsMode } from "@/lib/payments";
-import { FEATURED, PLANS, TIERS, money0, planJobsLabel, planPriceLabel } from "@/lib/plans";
+import { FEATURED, PILOT, PLANS, TIERS, getsPilotTrial, money0, planJobsLabel, planPriceLabel } from "@/lib/plans";
 import { simulateClubPayment, simulateExtrasPayment, simulateFeaturedPayment } from "./actions";
 
 export const metadata = { title: "Simulated checkout" };
@@ -23,8 +23,17 @@ export default async function DevCheckout({ searchParams }: { searchParams: Prom
         {tier && user.tailor ? (
           <>
             <h2>tailor me Club · {PLANS[tier].name}</h2>
-            <p className="num" style={{ fontSize: 32 }}>{planPriceLabel(tier)}</p>
-            <p className="muted">{planJobsLabel(tier)}</p>
+            {getsPilotTrial(user.tailor) ? (
+              <>
+                <p className="num" style={{ fontSize: 32 }}>$0 today</p>
+                <p className="muted">Free for {PILOT.freeDays} days as a pilot tailor, then {planPriceLabel(tier)}. {planJobsLabel(tier)}.</p>
+              </>
+            ) : (
+              <>
+                <p className="num" style={{ fontSize: 32 }}>{planPriceLabel(tier)}</p>
+                <p className="muted">{planJobsLabel(tier)}</p>
+              </>
+            )}
             <form action={simulateClubPayment}>
               <input type="hidden" name="tier" value={tier} />
               <button className="btn btn-primary" style={{ width: "100%" }}>Subscribe</button>

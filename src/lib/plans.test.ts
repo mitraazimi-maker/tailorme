@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EXTRA_JOB_CENTS, FEATURED, PLANS, TIERS, cheapestFor, creditsFor, featuredSpotsLeft, hasCredit, monthEnd, monthKey, monthStart, prevMonthKey, rollover } from "./plans";
+import { EXTRA_JOB_CENTS, FEATURED, PILOT, PLANS, TIERS, getsPilotTrial, inFreePeriod, pilotFreeUntil, cheapestFor, creditsFor, featuredSpotsLeft, hasCredit, monthEnd, monthKey, monthStart, prevMonthKey, rollover } from "./plans";
 
 it("prices and allowances are as decided", () => {
   expect(TIERS.map((t) => [PLANS[t].jobs, PLANS[t].priceCents])).toEqual([[5, 2900], [12, 5900], [25, 12900], [50, 23900]]);
@@ -70,4 +70,22 @@ describe("creditsFor", () => {
     // Used nothing for two months: the carry is capped at one month's allowance.
     expect(creditsFor("STARTER", u(0, 0, 0), longAgo, now)).toMatchObject({ carried: 5, left: 10 }));
   it("Studio has 50", () => expect(creditsFor("STUDIO", u(49, 50, 50), longAgo, now)).toMatchObject({ allowance: 50, left: 1 }));
+});
+
+describe("pilot tailors", () => {
+  const now = new Date("2026-11-15T02:00:00Z");
+  it("two months (60 days) free, max 15 tailors", () => {
+    expect(PILOT).toEqual({ freeDays: 60, maxTailors: 15 });
+    expect(pilotFreeUntil(now).toISOString()).toBe("2027-01-14T02:00:00.000Z");
+  });
+  it("free until the date, then paid", () => {
+    expect(inFreePeriod(pilotFreeUntil(now), now)).toBe(true);
+    expect(inFreePeriod(now, new Date(now.getTime() + 1))).toBe(false);
+    expect(inFreePeriod(null, now)).toBe(false);
+  });
+  it("the trial is given once", () => {
+    expect(getsPilotTrial({ pilot: true, freeUntil: null })).toBe(true);
+    expect(getsPilotTrial({ pilot: true, freeUntil: now })).toBe(false);
+    expect(getsPilotTrial({ pilot: false, freeUntil: null })).toBe(false);
+  });
 });

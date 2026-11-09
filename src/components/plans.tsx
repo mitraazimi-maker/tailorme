@@ -54,7 +54,7 @@ export function ExtraJobsForm({ action }: { action: Action }) {
 }
 
 /** The four plans, each with its own button. `action` joins or switches. */
-export function PlanCards({ current, action, verb }: { current: ClubTier | null; action: Action; verb: "join" | "switch" }) {
+export function PlanCards({ current, action, verb, freeTrial = false }: { current: ClubTier | null; action: Action; verb: "join" | "switch"; freeTrial?: boolean }) {
   return (
     <div className="plans">
       {TIERS.map((t) => {
@@ -73,7 +73,7 @@ export function PlanCards({ current, action, verb }: { current: ClubTier | null;
               <form action={action}>
                 <input type="hidden" name="tier" value={t} />
                 <button className={`btn btn-sm ${t === "PRO" && !current ? "btn-primary" : "btn-ghost"}`} style={{ width: "100%" }}>
-                  {verb === "join" ? `Join on ${p.name}` : `Switch to ${p.name}`}
+                  {verb === "join" ? `Join on ${p.name}${freeTrial ? " · 2 months free" : ""}` : `Switch to ${p.name}`}
                 </button>
               </form>
             )}

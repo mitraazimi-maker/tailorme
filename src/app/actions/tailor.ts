@@ -12,7 +12,7 @@ import { activeMemberWhere, canQuote, isClubMember, isFeatured, isSuspended } fr
 import { MAX_PHOTO_BYTES, savePhoto, sniffImage } from "@/lib/storage";
 import { contactRefusal, findContactDetails } from "@/lib/contact-filter";
 import { findSuburb } from "@/lib/suburbs";
-import { EXTRA_JOB_PACKS, FEATURED, TIERS, extraJobsCents, featuredSpotsLeft, monthKey } from "@/lib/plans";
+import { EXTRA_JOB_PACKS, FEATURED, PILOT, TIERS, extraJobsCents, featuredSpotsLeft, getsPilotTrial, monthKey } from "@/lib/plans";
 import { creditsForTailor } from "@/lib/credits";
 import type { ClubTier } from "@prisma/client";
 import { canRecordFit, parseFit } from "@/lib/fit";
@@ -205,7 +205,8 @@ const tierFrom = (form: FormData): ClubTier => {
 export async function joinClub(form: FormData) {
   const { user, tailor } = await requireTailor("/tailor");
   if (tailor.clubStatus === "ACTIVE" || isSuspended(tailor)) redirect("/tailor");
-  redirect(await clubCheckoutUrl({ tailorId: tailor.id, email: user.email, stripeCustomerId: tailor.stripeCustomerId, tier: tierFrom(form) }));
+  const trialDays = getsPilotTrial(tailor) ? PILOT.freeDays : undefined;
+  redirect(await clubCheckoutUrl({ tailorId: tailor.id, email: user.email, stripeCustomerId: tailor.stripeCustomerId, tier: tierFrom(form), trialDays }));
 }
 
 /** Move between plans, for a tailor who's already a member. Takes effect at once. */

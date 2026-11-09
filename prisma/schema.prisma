@@ -136,6 +136,11 @@ model TailorProfile {
   // First joined the Club; months before this carry no unused jobs.
   clubSince            DateTime?
 
+  // Pilot tailors (picked by an admin, max 15): their Club plan is free for the
+  // first 2 months. freeUntil = when the free period ends (set when it starts).
+  pilot     Boolean   @default(false)
+  freeUntil DateTime?
+
   // Featured add-on, its own monthly subscription on any plan: featured in search,
   // 15-minute head start on new jobs, portfolio gallery. Max 3 per suburb.
   featuredStatus         ClubStatus @default(NONE)
