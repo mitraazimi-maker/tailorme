@@ -80,7 +80,7 @@ async function main() {
         tailor: {
           create: {
             slug: t.slug, businessName: t.name, suburb: t.suburb, bio: t.bio, yearsExperience: t.years, languages: t.langs, categories: t.cats,
-            comesToCustomer: t.mobile, sameDay: t.express, offersPickup: t.mobile, pickupFeeCents: t.mobile ? 1500 : null, pickupRadiusKm: 5, pickupNote: t.mobile ? "Weekday evenings" : null, clubStatus: "ACTIVE", clubTier: ti < 2 ? "UNLIMITED" : ti === 2 ? "PRO" : "STARTER", clubSince: new Date(Date.now() - 120 * 864e5), abnStatus: "CHECKED", abn: "51824753556", abnCheckedAt: new Date(),
+            comesToCustomer: t.mobile, sameDay: t.express, offersPickup: t.mobile, pickupFeeCents: t.mobile ? 1500 : null, pickupRadiusKm: 5, pickupNote: t.mobile ? "Weekday evenings" : null, clubStatus: "ACTIVE", clubTier: ti < 2 ? "UNLIMITED" : ti === 2 ? "PRO" : ti === 3 ? "BUSY" : "STARTER", clubSince: new Date(Date.now() - 120 * 864e5), abnStatus: "CHECKED", abn: "51824753556", abnCheckedAt: new Date(),
             openingHours: "Mon–Sat 9–5", isSample: true,
             services: { create: t.svc.map(([name, note, p], i) => ({ name, note: note || null, priceCents: typeof p === "number" ? p * 100 : null, priceText: typeof p === "string" ? p : null, sortOrder: i })) },
           },

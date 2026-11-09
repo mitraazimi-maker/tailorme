@@ -32,7 +32,7 @@ Written in the plain-English voice of the rest of tailor me. A lawyer should che
 
 - Point 3 is deliberate: banning all off-platform work with a customer is likely an unreasonable restraint. The obligation targets *steering* customers away, not serving them.
 - Point 4 matches what the app already enforces (`src/lib/contact-filter.ts`), so the term and the product agree.
-- Consider whether 12 months is reasonable for a $29–99/month membership (Starter 5 jobs, Pro 15, Unlimited; decided 9 Nov 2026).
+- Consider whether 12 months is reasonable for a $29–299/month membership (Starter 5 jobs, Pro 15, Busy 40, Unlimited; decided 9 Nov 2026).
 - Point 5 reflects the owner's decision (1 Nov 2026) that tailors found booking introduced customers outside tailor me are suspended for 6 months. The app lets an admin warn instead, for weak evidence or a first offence. Check that the suspension (and keeping no refund for the current billing period) is proportionate, and whether the tailor needs a right to respond before a decision.
 - Customers now pay nothing (9 Nov 2026). The customer-side terms should say booking is free, and that rebooking through tailor me keeps their booking history, fit record and the ability to review. The old rewards scheme was dropped, so no rewards terms are needed.
 - The Club terms need the plan rules in plain English: what counts as a job (a booking won, not a quote; rebooks never count), that unused jobs roll over for one month, that a tailor out of jobs can't send new quotes until the 1st or until they upgrade, and what happens to jobs when changing plan mid-month.

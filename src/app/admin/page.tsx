@@ -87,7 +87,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
                 <td className="mono">{t.abn ? formatAbn(t.abn) : "—"}{t.abnEntityName && <div className="muted">{t.abnEntityName}</div>}</td>
                 <td>
                   <Status s={t.clubStatus} />
-                  {t.clubStatus === "ACTIVE" && <div className="muted" style={{ marginTop: 4 }}>{t.clubTier === "UNLIMITED" ? "Unlimited" : t.clubTier === "PRO" ? "Pro" : "Starter"}</div>}
+                  {t.clubStatus === "ACTIVE" && <div className="muted" style={{ marginTop: 4 }}>{PLANS[t.clubTier].name}</div>}
                   {isSuspended(t) && (
                     <form action={liftSuspension} style={{ marginTop: 6 }}>
                       <input type="hidden" name="tailorId" value={t.id} />

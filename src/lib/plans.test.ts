@@ -4,7 +4,8 @@ import { PLANS, creditsFor, hasCredit, monthEnd, monthKey, monthStart, prevMonth
 it("prices and allowances are as decided", () => {
   expect([PLANS.STARTER.priceCents, PLANS.STARTER.jobs]).toEqual([2900, 5]);
   expect([PLANS.PRO.priceCents, PLANS.PRO.jobs]).toEqual([5900, 15]);
-  expect([PLANS.UNLIMITED.priceCents, PLANS.UNLIMITED.jobs]).toEqual([9900, null]);
+  expect([PLANS.BUSY.priceCents, PLANS.BUSY.jobs]).toEqual([14900, 40]);
+  expect([PLANS.UNLIMITED.priceCents, PLANS.UNLIMITED.jobs]).toEqual([29900, null]);
 });
 
 describe("Sydney months", () => {
@@ -45,5 +46,6 @@ describe("creditsFor", () => {
   it("rollover lasts one month only", () =>
     // Used nothing for two months: the carry is capped at one month's allowance.
     expect(creditsFor("STARTER", u(0, 0, 0), longAgo, now)).toMatchObject({ carried: 5, left: 10 }));
+  it("Busy has 40", () => expect(creditsFor("BUSY", u(39, 40, 40), longAgo, now)).toMatchObject({ allowance: 40, left: 1 }));
   it("Unlimited never runs out", () => expect(hasCredit(creditsFor("UNLIMITED", u(500, 0, 0), longAgo, now))).toBe(true));
 });

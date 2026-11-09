@@ -1,6 +1,6 @@
 # tailor me
 
-Sydney marketplace for everyday alterations and repairs. Customers post a job with photos, up to three local tailors send guide quotes, and the customer books one. Posting and booking are free for customers. Tailors pay for the tailor me Club by tier: Starter $29/month (5 jobs won a month), Pro $59 (15) or Unlimited $99 (unlimited, plus featured in search, a 15-minute head start on new jobs and a portfolio). A job is used only when a customer books the tailor; rebooks are free and unused jobs roll over one month.
+Sydney marketplace for everyday alterations and repairs. Customers post a job with photos, up to three local tailors send guide quotes, and the customer books one. Posting and booking are free for customers. Tailors pay for the tailor me Club by tier: Starter $29/month (5 jobs won a month), Pro $59 (15), Busy $149 (40) or Unlimited $299 (unlimited, plus featured in search, a 15-minute head start on new jobs and a portfolio). A job is used only when a customer books the tailor; rebooks are free and unused jobs roll over one month.
 
 Read `CLAUDE.md` first. It holds the product rules (disclaimers, "ABN checked", reviews only from bookings) that the code enforces.
 
@@ -8,7 +8,7 @@ Read `CLAUDE.md` first. It holds the product rules (disclaimers, "ABN checked", 
 
 - Next.js 15 (App Router, server actions), TypeScript
 - PostgreSQL via Prisma
-- Stripe Billing for the Club tiers (Starter $29, Pro $59, Unlimited $99 a month)
+- Stripe Billing for the Club tiers (Starter $29, Pro $59, Busy $149, Unlimited $299 a month)
 - Email/password accounts with database sessions (bcrypt, httpOnly cookie)
 - Job photos stored on local disk and served through an access-checked route
 
@@ -44,7 +44,7 @@ npm run build
 
 1. **Database:** any managed Postgres (Neon, Supabase, RDS). Set `DATABASE_URL` and run `npm run db:deploy`. Don't seed.
 2. **Stripe:**
-   - Create recurring monthly prices of A$29 (Starter), A$59 (Pro) and A$99 (Unlimited), and set `STRIPE_STARTER_PRICE_ID`, `STRIPE_PRO_PRICE_ID` and `STRIPE_UNLIMITED_PRICE_ID`. Customers pay nothing, so there is no booking checkout.
+   - Create recurring monthly prices of A$29 (Starter), A$59 (Pro), A$149 (Busy) and A$299 (Unlimited), and set `STRIPE_STARTER_PRICE_ID`, `STRIPE_PRO_PRICE_ID`, `STRIPE_BUSY_PRICE_ID` and `STRIPE_UNLIMITED_PRICE_ID`. Customers pay nothing, so there is no booking checkout.
    - Set `STRIPE_SECRET_KEY` and `PAYMENTS_MODE=stripe`.
    - Add a webhook to `/api/stripe/webhook` for `checkout.session.completed` and `customer.subscription.created`, `customer.subscription.updated` and `customer.subscription.deleted`, then set `STRIPE_WEBHOOK_SECRET`.
    - Turn on the customer billing portal.
