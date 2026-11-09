@@ -3,9 +3,9 @@ import { PLANS, creditsFor, hasCredit, monthEnd, monthKey, monthStart, prevMonth
 
 it("prices and allowances are as decided", () => {
   expect([PLANS.STARTER.priceCents, PLANS.STARTER.jobs]).toEqual([2900, 5]);
-  expect([PLANS.PRO.priceCents, PLANS.PRO.jobs]).toEqual([5900, 15]);
-  expect([PLANS.BUSY.priceCents, PLANS.BUSY.jobs]).toEqual([14900, 40]);
-  expect([PLANS.STUDIO.priceCents, PLANS.STUDIO.jobs]).toEqual([21900, 80]);
+  expect([PLANS.PRO.priceCents, PLANS.PRO.jobs]).toEqual([5900, 10]);
+  expect([PLANS.BUSY.priceCents, PLANS.BUSY.jobs]).toEqual([14900, 25]);
+  expect([PLANS.STUDIO.priceCents, PLANS.STUDIO.jobs]).toEqual([24900, 50]);
   expect([PLANS.UNLIMITED.priceCents, PLANS.UNLIMITED.jobs]).toEqual([29900, null]);
 });
 
@@ -43,10 +43,10 @@ describe("creditsFor", () => {
     expect(hasCredit(c)).toBe(true);
   });
   it("runs out", () => expect(hasCredit(creditsFor("STARTER", u(5, 5, 5), longAgo, now))).toBe(false));
-  it("adds last month's unused", () => expect(creditsFor("PRO", u(0, 10, 15), longAgo, now)).toMatchObject({ carried: 5, left: 20 }));
+  it("adds last month's unused", () => expect(creditsFor("PRO", u(0, 6, 10), longAgo, now)).toMatchObject({ carried: 4, left: 14 }));
   it("rollover lasts one month only", () =>
     // Used nothing for two months: the carry is capped at one month's allowance.
     expect(creditsFor("STARTER", u(0, 0, 0), longAgo, now)).toMatchObject({ carried: 5, left: 10 }));
-  it("Busy has 40", () => expect(creditsFor("BUSY", u(39, 40, 40), longAgo, now)).toMatchObject({ allowance: 40, left: 1 }));
+  it("Busy has 25", () => expect(creditsFor("BUSY", u(24, 25, 25), longAgo, now)).toMatchObject({ allowance: 25, left: 1 }));
   it("Unlimited never runs out", () => expect(hasCredit(creditsFor("UNLIMITED", u(500, 0, 0), longAgo, now))).toBe(true));
 });

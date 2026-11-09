@@ -1,4 +1,5 @@
-// tailor me Club tiers (decided 9 Nov 2026; Busy added and Unlimited raised to $299 the same day; Studio, 80 jobs at $219, added to soften the step to Unlimited). Customers pay nothing; tailors pay a
+// tailor me Club tiers (decided 9 Nov 2026): Starter 5 jobs $29, Pro 10 $59, Busy 25 $149,
+// Studio 50 $249, Unlimited $299. Customers pay nothing; tailors pay a
 // monthly membership that includes a number of jobs won. A job is "used" only
 // when a customer books the tailor (never for a quote that loses), and rebooks
 // from a customer who booked them before are always free. Unused jobs roll over
@@ -9,9 +10,9 @@ export type Plan = { tier: ClubTier; name: string; priceCents: number; jobs: num
 
 export const PLANS: Record<ClubTier, Plan> = {
   STARTER: { tier: "STARTER", name: "Starter", priceCents: 2900, jobs: 5, perks: [] },
-  PRO: { tier: "PRO", name: "Pro", priceCents: 5900, jobs: 15, perks: [] },
-  BUSY: { tier: "BUSY", name: "Busy", priceCents: 14900, jobs: 40, perks: [] },
-  STUDIO: { tier: "STUDIO", name: "Studio", priceCents: 21900, jobs: 80, perks: [] },
+  PRO: { tier: "PRO", name: "Pro", priceCents: 5900, jobs: 10, perks: [] },
+  BUSY: { tier: "BUSY", name: "Busy", priceCents: 14900, jobs: 25, perks: [] },
+  STUDIO: { tier: "STUDIO", name: "Studio", priceCents: 24900, jobs: 50, perks: [] },
   UNLIMITED: {
     tier: "UNLIMITED",
     name: "Unlimited",
