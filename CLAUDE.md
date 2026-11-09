@@ -14,7 +14,7 @@ A Sydney marketplace that connects people with local tailors and seamstresses fo
 
 ## Business model (decided)
 
-- **Tailors pay, customers don't** (decided 9 Nov 2026; replaces the $10 Club, $29 Club Plus, the 15%/min $5 customer booking fee, the flat $5 rebook fee and customer rewards). The **tailor me Club** has three tiers, each including a number of **jobs won** a month:
+- **Tailors pay, customers don't** (decided 9 Nov 2026; replaces the $10 Club, $29 Club Plus, the 15%/min $5 customer booking fee, the flat $5 rebook fee and customer rewards). The **tailor me Club** has four plans, each including a number of **jobs won** a month:
   - **Starter $39/month:** 5 jobs. **Pro $79/month:** 12 jobs. **Busy $169/month:** 25 jobs. **Studio $309/month:** 50 jobs. No unlimited plan (decided 9 Nov 2026, for profit: every job earns). Prices raised about 30% the same day, once Sydney's normal job was known to average about $60.
   - **Extra jobs: $9 each**, bought any time on any plan, valid until the end of that Sydney month. $9 is set just above the next plan's per-job rate, so regular overflow is cheaper as an upgrade (a unit test pins this).
   - **Featured add-on: $99/month** on any plan, its own subscription: Featured first in search (always labelled "Featured" and disclosed as paid placement), a **15-minute head start** on new matching jobs, and a portfolio gallery (up to 12 photos). **Max 3 per suburb.**
@@ -99,7 +99,7 @@ Not built yet: real email (`src/lib/notify.ts` only logs), cloud photo storage (
 
 ## Next steps (not yet done)
 
-1. ~~Turn the prototype into a real app~~ Done (v1, see "The app"). Remaining before launch: email provider, S3/R2 photo storage, password reset, Stripe live keys, the three tier prices and the webhook, ABN Lookup GUID.
+1. ~~Turn the prototype into a real app~~ Done (v1, see "The app"). Remaining before launch: email provider, S3/R2 photo storage, password reset, Stripe live keys, the five recurring prices (four plans + Featured) and the webhook, ABN Lookup GUID.
 2. Consider reusing the Spotfinder codebase (marketplace with Stripe and commission logic already built).
 3. Suburb SEO landing pages ("Trouser hems in Marrickville"). This is the main growth channel.
 4. Plain-English terms of use for customers and tailors (introductions only, no liability for work). Get legal review. Include the non-circumvention section drafted in `docs/club-terms-non-circumvention-draft.md`.
@@ -114,7 +114,7 @@ Not built yet: real email (`src/lib/notify.ts` only logs), cloud photo storage (
 
 ## Known risks
 
-- Revenue is tailors only: plans ($39–309 a month), extra jobs ($9) and Featured ($99), so it's capped by how many tailors pay, and tailors only stay if the jobs come. Before there's demand, a tailor paying $29 who wins 1 job will churn. Go dense in a few suburbs first and consider free months for pilot tailors.
+- Revenue is tailors only: plans ($39–309 a month), extra jobs ($9) and Featured ($99), so it's capped by how many tailors pay, and tailors only stay if the jobs come. Before there's demand, a tailor paying $39 who wins 1 job will churn. Go dense in a few suburbs first; pilot tailors get 2 free months, and the owner's turned-away jobs should go to them.
 - With no customer fee, customers have no reason to go direct; the risk moves to tailors taking new customers off-app before booking (to save a job). Defences: free rebooks, exclusive rebooks, contact details blocked before booking, "Booked N times through tailor me" on profiles, and a draft Club terms clause (`docs/club-terms-non-circumvention-draft.md`, needs legal review). None of it stops a determined customer; it removes the reasons to bother.
 - The brand promises an experience the tailors must deliver. Keep the luxury in what tailor me controls: booking, messages, fit profile, the four standards.
 - Competitors: Google Maps "alterations near me", Airtasker (lists tailoring in Sydney).
