@@ -22,8 +22,8 @@ describe("categoryFor", () => {
 
 describe("estimate", () => {
   it("rounds to $5 and applies garment and rush multipliers", () => {
-    expect(estimate("Trousers / jeans", "Shorten / hem", "Flexible")).toEqual([15, 40]);
-    expect(estimate("Jacket / coat", "Shorten / hem", "Flexible")).toEqual([20, 55]);
-    expect(estimate("Trousers / jeans", "Shorten / hem", "This week")).toEqual([20, 50]);
+    expect(estimate("Trousers / jeans", "Shorten / hem", "Flexible")).toEqual([35, 75]);
+    expect(estimate("Jacket / coat", "Shorten / hem", "Flexible")).toEqual([50, 105]);
+    expect(estimate("Trousers / jeans", "Shorten / hem", "This week")).toEqual([45, 95]);
   });
 });

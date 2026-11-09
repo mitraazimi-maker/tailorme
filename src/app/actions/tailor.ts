@@ -261,7 +261,7 @@ export async function featuredInSuburb(suburb: string, exceptTailorId: string) {
   return db.tailorProfile.count({ where: { ...activeMemberWhere(), suburb, featuredStatus: "ACTIVE", id: { not: exceptTailorId } } });
 }
 
-/** The Featured add-on: $79/month on top of any plan, max 3 tailors per suburb. */
+/** The Featured add-on: $99/month on top of any plan, max 3 tailors per suburb. */
 export async function joinFeatured() {
   const { user, tailor } = await requireTailor("/tailor");
   if (!isClubMember(tailor)) back("/tailor", "Join a Club plan first. Featured is an add-on to a plan.");
@@ -283,7 +283,7 @@ export async function stopFeatured() {
   redirect("/tailor?featured=stopped");
 }
 
-/** Extra jobs for this month, $7 each, so a tailor never has to stop quoting. */
+/** Extra jobs for this month, $9 each, so a tailor never has to stop quoting. */
 export async function buyExtraJobs(form: FormData) {
   const { user, tailor } = await requireTailor("/tailor");
   if (!isClubMember(tailor)) back("/tailor", "Join a Club plan first.");

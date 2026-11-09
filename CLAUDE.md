@@ -15,9 +15,9 @@ A Sydney marketplace that connects people with local tailors and seamstresses fo
 ## Business model (decided)
 
 - **Tailors pay, customers don't** (decided 9 Nov 2026; replaces the $10 Club, $29 Club Plus, the 15%/min $5 customer booking fee, the flat $5 rebook fee and customer rewards). The **tailor me Club** has three tiers, each including a number of **jobs won** a month:
-  - **Starter $29/month:** 5 jobs. **Pro $59/month:** 12 jobs. **Busy $129/month:** 25 jobs. **Studio $239/month:** 50 jobs. No unlimited plan (decided 9 Nov 2026, for profit: every job earns).
-  - **Extra jobs: $7 each**, bought any time on any plan, valid until the end of that Sydney month. $7 is set just above the next plan's per-job rate, so regular overflow is cheaper as an upgrade (a unit test pins this).
-  - **Featured add-on: $79/month** on any plan, its own subscription: Featured first in search (always labelled "Featured" and disclosed as paid placement), a **15-minute head start** on new matching jobs, and a portfolio gallery (up to 12 photos). **Max 3 per suburb.**
+  - **Starter $39/month:** 5 jobs. **Pro $79/month:** 12 jobs. **Busy $169/month:** 25 jobs. **Studio $309/month:** 50 jobs. No unlimited plan (decided 9 Nov 2026, for profit: every job earns). Prices raised about 30% the same day, once Sydney's normal job was known to average about $60.
+  - **Extra jobs: $9 each**, bought any time on any plan, valid until the end of that Sydney month. $9 is set just above the next plan's per-job rate, so regular overflow is cheaper as an upgrade (a unit test pins this).
+  - **Featured add-on: $99/month** on any plan, its own subscription: Featured first in search (always labelled "Featured" and disclosed as paid placement), a **15-minute head start** on new matching jobs, and a portfolio gallery (up to 12 photos). **Max 3 per suburb.**
   - A job is used **only when a customer books the tailor**, never for a quote that loses. Quotes are unlimited while the tailor has jobs left.
   - **Rebooks are free**: a booking from a customer who booked that tailor through tailor me before never uses a job (otherwise tailors would take regulars off the app).
   - **Unused jobs roll over for one month**, then expire. When a tailor runs out, they can't send new quotes until they buy extra jobs, upgrade (takes effect at once) or the 1st (Sydney time) comes round. Quotes already sent can still be booked; customers are never blocked.
@@ -101,14 +101,20 @@ Not built yet: real email (`src/lib/notify.ts` only logs), cloud photo storage (
 
 1. ~~Turn the prototype into a real app~~ Done (v1, see "The app"). Remaining before launch: email provider, S3/R2 photo storage, password reset, Stripe live keys, the three tier prices and the webhook, ABN Lookup GUID.
 2. Consider reusing the Spotfinder codebase (marketplace with Stripe and commission logic already built).
-3. Suburb SEO landing pages ("Trouser hems in Marrickville from $15"). This is the main growth channel.
+3. Suburb SEO landing pages ("Trouser hems in Marrickville"). This is the main growth channel.
 4. Plain-English terms of use for customers and tailors (introductions only, no liability for work). Get legal review. Include the non-circumvention section drafted in `docs/club-terms-non-circumvention-draft.md`.
 5. One-page agreement with Soraya Tailoring: what it sends, what it gets, who owns the customer, how it's listed, exit terms. Confirm Rabie is comfortable with Soraya's subcontractors listing on tailor me.
 6. Pilot: 10–15 tailors in 3–4 suburbs, jobs routed by hand, then build.
 
+## Market facts from the owner (9 Nov 2026)
+
+- The owner's own business does about **$5M a year of alterations in Sydney**, under 10% of the market, at about **$200 a job** (high-end; under 5% is bridal or bespoke). So the Sydney market is at least ~$50M a year.
+- **Normal alteration shops average about $60 a job.** The price guide in `src/lib/catalog.ts` uses this.
+- tailor me's at-home pitch reaches the same customers who pay ~$200; whether it may take some of them is an open decision.
+
 ## Known risks
 
-- Revenue is tailors only: plans ($29–239 a month), extra jobs ($7) and Featured ($79), so it's capped by how many tailors pay, and tailors only stay if the jobs come. Before there's demand, a tailor paying $29 who wins 1 job will churn. Go dense in a few suburbs first and consider free months for pilot tailors.
+- Revenue is tailors only: plans ($39–309 a month), extra jobs ($9) and Featured ($99), so it's capped by how many tailors pay, and tailors only stay if the jobs come. Before there's demand, a tailor paying $29 who wins 1 job will churn. Go dense in a few suburbs first and consider free months for pilot tailors.
 - With no customer fee, customers have no reason to go direct; the risk moves to tailors taking new customers off-app before booking (to save a job). Defences: free rebooks, exclusive rebooks, contact details blocked before booking, "Booked N times through tailor me" on profiles, and a draft Club terms clause (`docs/club-terms-non-circumvention-draft.md`, needs legal review). None of it stops a determined customer; it removes the reasons to bother.
 - The brand promises an experience the tailors must deliver. Keep the luxury in what tailor me controls: booking, messages, fit profile, the four standards.
 - Competitors: Google Maps "alterations near me", Airtasker (lists tailoring in Sydney).

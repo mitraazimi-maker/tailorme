@@ -22,13 +22,13 @@ export const MAX_PHOTOS = 6;
 export type Pattern = [name: string, a: string, b: string];
 
 export const CATEGORIES = [
-  { id: "hems", name: "Hems & shortening", range: "$14 – $40", desc: "Trousers, dresses, skirts, sleeves", pat: ["linen", "#E7E2D6", "#CFC8B6"] },
-  { id: "fit", name: "Take in / let out", range: "$25 – $70", desc: "Waists, side seams, shirts", pat: ["pinstripe", "#2B3245", "#8A93A8"] },
-  { id: "zips", name: "Zips & buttons", range: "$10 – $45", desc: "Broken zips, missing buttons", pat: ["houndstooth", "#1E2230", "#E9E5DA"] },
-  { id: "repair", name: "Repairs & mending", range: "$12 – $50", desc: "Tears, holes, split seams", pat: ["herringbone", "#5B4636", "#7A604B"] },
-  { id: "denim", name: "Jeans & denim", range: "$18 – $38", desc: "Original hems, crotch repairs", pat: ["denim", "#2D4A7A", "#4E6EA3"] },
-  { id: "uniform", name: "School & work uniforms", range: "$12 – $30", desc: "Hems, name tags, patches", pat: ["tartan", "#1F4D3A", "#E2B33A"] },
-  { id: "home", name: "Curtains & homewares", range: "$25 – $90", desc: "Curtain hems, cushion covers", pat: ["check", "#DCE5F2", "#6E8BBE"] },
+  { id: "hems", name: "Hems & shortening", range: "$35 – $75", desc: "Trousers, dresses, skirts, sleeves", pat: ["linen", "#E7E2D6", "#CFC8B6"] },
+  { id: "fit", name: "Take in / let out", range: "$50 – $110", desc: "Waists, side seams, shirts", pat: ["pinstripe", "#2B3245", "#8A93A8"] },
+  { id: "zips", name: "Zips & buttons", range: "$15 – $85", desc: "Broken zips, missing buttons", pat: ["houndstooth", "#1E2230", "#E9E5DA"] },
+  { id: "repair", name: "Repairs & mending", range: "$30 – $75", desc: "Tears, holes, split seams", pat: ["herringbone", "#5B4636", "#7A604B"] },
+  { id: "denim", name: "Jeans & denim", range: "$40 – $75", desc: "Original hems, crotch repairs", pat: ["denim", "#2D4A7A", "#4E6EA3"] },
+  { id: "uniform", name: "School & work uniforms", range: "$25 – $55", desc: "Hems, name tags, patches", pat: ["tartan", "#1F4D3A", "#E2B33A"] },
+  { id: "home", name: "Curtains & homewares", range: "$50 – $150", desc: "Curtain hems, cushion covers", pat: ["check", "#DCE5F2", "#6E8BBE"] },
   { id: "express", name: "Same-day express", range: "+30% rush", desc: "Need it by tonight", pat: ["check", "#E9DCC6", "#B08A52"] },
 ] as const satisfies readonly { id: string; name: string; range: string; desc: string; pat: Pattern }[];
 
@@ -83,15 +83,17 @@ export const FITTING: [string, string][] = [
   ["No fitting needed", "Measurement is enough"],
 ];
 
+// Sydney prices (updated 9 Nov 2026): normal alteration shops average about $60 a job;
+// high-end shops charge about $200 for the same simple work.
 export const PRICE_GUIDE: [job: string, median: number, lo: number, hi: number][] = [
-  ["Trouser hem", 20, 14, 35],
-  ["Jeans hem, original kept", 24, 18, 38],
-  ["Dress or skirt hem", 32, 22, 48],
-  ["Take in at side seams", 40, 25, 70],
-  ["Zip replacement", 28, 10, 45],
-  ["Patch or darn a hole", 18, 12, 35],
-  ["School uniform hem", 12, 10, 20],
-  ["Curtain hem (per panel)", 30, 25, 60],
+  ["Trouser hem", 50, 35, 70],
+  ["Jeans hem, original kept", 55, 40, 75],
+  ["Dress or skirt hem", 65, 45, 95],
+  ["Take in at side seams", 75, 50, 110],
+  ["Zip replacement", 60, 40, 85],
+  ["Patch or darn a hole", 40, 30, 65],
+  ["School uniform hem", 30, 25, 45],
+  ["Curtain hem (per panel)", 60, 50, 120],
 ];
 
 /** Which category a posted job is routed to. */
@@ -113,20 +115,21 @@ export function categoryFor(garment: string, work: string): CategoryId {
   }
 }
 
+// Guide ranges by work type, at Sydney's normal-shop prices (about $60 a job on average).
 const BASE: Record<string, [number, number]> = {
-  "Shorten / hem": [14, 40],
-  "Take in": [25, 70],
-  "Let out": [25, 60],
-  "Replace zip": [18, 45],
-  "Repair a tear": [12, 40],
-  "Buttons / small fix": [8, 20],
-  "Patch or darn": [12, 35],
-  "Not sure": [15, 60],
+  "Shorten / hem": [35, 75],
+  "Take in": [50, 110],
+  "Let out": [50, 100],
+  "Replace zip": [40, 85],
+  "Repair a tear": [30, 75],
+  "Buttons / small fix": [15, 40],
+  "Patch or darn": [30, 65],
+  "Not sure": [35, 100],
 };
 
 /** Guide price range in whole dollars, rounded to $5. */
 export function estimate(garment: string, work: string, timing: string): [number, number] {
-  const base = BASE[work] ?? [15, 60];
+  const base = BASE[work] ?? [35, 100];
   let m = garment === "Jacket / coat" ? 1.4 : garment === "Curtains / homewares" ? 1.5 : 1;
   if (timing === "This week") m *= 1.25;
   const r = (v: number) => Math.round((v * m) / 5) * 5;

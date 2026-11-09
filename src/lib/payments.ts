@@ -32,7 +32,7 @@ export function stripe(): Stripe {
 
 const appUrl = () => (process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "");
 
-// Stripe price for each Club tier: Starter $29, Pro $59, Busy $129, Studio $239 a month.
+// Stripe price for each Club tier: Starter $39, Pro $79, Busy $169, Studio $309 a month.
 const PRICE_ENV: Record<ClubTier, string> = {
   STARTER: "STRIPE_STARTER_PRICE_ID",
   PRO: "STRIPE_PRO_PRICE_ID",
@@ -82,7 +82,7 @@ export async function changeClubTier(subscriptionId: string, tier: ClubTier) {
   });
 }
 
-/** The Featured add-on: its own $79/month subscription (STRIPE_FEATURED_PRICE_ID), on top of any plan. */
+/** The Featured add-on: its own $99/month subscription (STRIPE_FEATURED_PRICE_ID), on top of any plan. */
 export async function featuredCheckoutUrl(args: { tailorId: string; email: string; stripeCustomerId: string | null }) {
   if (paymentsMode() === "simulate") return "/dev/checkout?featured=1";
   const price = process.env.STRIPE_FEATURED_PRICE_ID;
@@ -105,7 +105,7 @@ export async function cancelFeatured(subscriptionId: string) {
   return stripe().subscriptions.update(subscriptionId, { cancel_at_period_end: true });
 }
 
-/** One-off payment for extra jobs this month ($7 each). Confirmed by the webhook. */
+/** One-off payment for extra jobs this month ($9 each). Confirmed by the webhook. */
 export async function extraJobsCheckoutUrl(args: { purchaseId: string; email: string; stripeCustomerId: string | null; jobs: number }) {
   if (paymentsMode() === "simulate") return { url: `/dev/checkout?extras=${args.purchaseId}`, sessionId: null };
   const session = await stripe().checkout.sessions.create({

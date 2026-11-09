@@ -1,4 +1,5 @@
-// tailor me Club tiers (decided 9 Nov 2026). Customers pay nothing; tailors pay a
+// tailor me Club tiers (decided 9 Nov 2026; prices raised about 30% the same day once
+// Sydney's normal job was known to average about $60, not $30). Customers pay nothing; tailors pay a
 // monthly plan that includes a number of jobs won. A job is "used" only when a
 // customer books the tailor (never for a quote that loses), and rebooks from a
 // customer who booked them before are always free. Unused plan jobs roll over for
@@ -10,15 +11,15 @@ import type { ClubTier } from "@prisma/client";
 export type Plan = { tier: ClubTier; name: string; priceCents: number; jobs: number };
 
 export const PLANS: Record<ClubTier, Plan> = {
-  STARTER: { tier: "STARTER", name: "Starter", priceCents: 2900, jobs: 5 },
-  PRO: { tier: "PRO", name: "Pro", priceCents: 5900, jobs: 12 },
-  BUSY: { tier: "BUSY", name: "Busy", priceCents: 12900, jobs: 25 },
-  STUDIO: { tier: "STUDIO", name: "Studio", priceCents: 23900, jobs: 50 },
+  STARTER: { tier: "STARTER", name: "Starter", priceCents: 3900, jobs: 5 },
+  PRO: { tier: "PRO", name: "Pro", priceCents: 7900, jobs: 12 },
+  BUSY: { tier: "BUSY", name: "Busy", priceCents: 16900, jobs: 25 },
+  STUDIO: { tier: "STUDIO", name: "Studio", priceCents: 30900, jobs: 50 },
 };
 export const TIERS: ClubTier[] = ["STARTER", "PRO", "BUSY", "STUDIO"];
 
 /** One extra job, bought when the plan's jobs run out. Set just above the next plan's rate, so upgrading is the better deal for regular overflow. */
-export const EXTRA_JOB_CENTS = 700;
+export const EXTRA_JOB_CENTS = 900;
 export const EXTRA_JOB_PACKS = [1, 5, 10] as const;
 export const extraJobsCents = (jobs: number) => jobs * EXTRA_JOB_CENTS;
 
@@ -32,7 +33,7 @@ export const getsPilotTrial = (t: { pilot: boolean; freeUntil: Date | null }) =>
 
 /** The Featured add-on: featured placement, the head start and the portfolio. */
 export const FEATURED = {
-  priceCents: 7900,
+  priceCents: 9900,
   perSuburb: 3,
   perks: ["Featured first in search (labelled as paid placement)", "15-minute head start on new matching jobs", "Portfolio gallery, up to 12 photos"],
 } as const;

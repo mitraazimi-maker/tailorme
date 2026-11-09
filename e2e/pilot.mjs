@@ -33,10 +33,10 @@ check(await shows(t, "You’re a tailor me pilot tailor"), "tailor told they're 
 await t.getByRole("button", { name: "Join on Pro · 2 months free" }).click();
 await t.waitForURL(/dev\/checkout\?club=pro/);
 check(await shows(t, "$0 today"), "checkout charges nothing today", "pilot charged at checkout");
-check(await shows(t, "then $59/month"), "checkout says what it costs after", "price after trial missing");
+check(await shows(t, "then $79/month"), "checkout says what it costs after", "price after trial missing");
 await t.getByRole("button", { name: "Subscribe" }).click();
 await t.waitForURL(/club=1/);
-check(await shows(t, "as a pilot tailor, then $59/month"), "dashboard shows the free period and the price after", "free period not shown");
+check(await shows(t, "as a pilot tailor, then $79/month"), "dashboard shows the free period and the price after", "free period not shown");
 await t.screenshot({ path: SHOTS + "pilot-dashboard-400.png", fullPage: true });
 check((await mrr(admin)) === before, "free plans don't count towards monthly revenue", "free plan counted as revenue");
 
@@ -46,7 +46,7 @@ await admin.getByRole("button", { name: "Make Ricci Alterations a pilot tailor" 
 await admin.waitForLoadState("networkidle");
 const ricci = await login("ricci@example.com");
 await ricci.goto(BASE + "/tailor");
-check(await shows(ricci, "as a pilot tailor, then $59/month"), "existing member's next 2 months are free", "existing member not made free");
+check(await shows(ricci, "as a pilot tailor, then $79/month"), "existing member's next 2 months are free", "existing member not made free");
 
 // The cap: 15 pilots, then no more buttons.
 for (let i = 0; i < 10; i++)

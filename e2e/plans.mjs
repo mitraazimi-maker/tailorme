@@ -62,12 +62,12 @@ await k.goto(`${BASE}/tailor/jobs/${job2}`);
 check(await shows(k, "Buy extra jobs or upgrade your plan"), "can't quote with no jobs left", "quoted with no jobs left");
 check((await k.locator("#price").count()) === 0, "quote form hidden", "quote form still shown");
 
-// --- Extra jobs: $7 each, this month only ---
+// --- Extra jobs: $9 each, this month only ---
 await k.goto(BASE + "/tailor");
-await k.getByRole("button", { name: /Buy 1 extra job for \$7/ }).click();
+await k.getByRole("button", { name: /Buy 1 extra job for \$9/ }).click();
 await k.waitForURL(/dev\/checkout\?extras=/);
-check(await shows(k, "$7"), "checkout charges $7 for one extra job", "wrong extra job price");
-await k.getByRole("button", { name: /Pay \$7/ }).click();
+check(await shows(k, "$9"), "checkout charges $9 for one extra job", "wrong extra job price");
+await k.getByRole("button", { name: /Pay \$9/ }).click();
 await k.waitForURL(/extras=1/);
 check(await shows(k, "Extra jobs added"), "extra job confirmed", "extra job not confirmed");
 check((await jobsLeft(k)) === 1, "one job left after buying one extra", "extra job not counted");
@@ -106,7 +106,7 @@ check(await shows(k, "Featured is off"), "Featured stopped", "couldn't stop Feat
 // --- Tailor-facing pricing ---
 const anon = await (await (await import("./lib.mjs")).browser.newContext({ viewport: phone })).newPage();
 await anon.goto(BASE + "/for-tailors");
-for (const t of ["$29", "$59", "$129", "$239", "$7", "$79", "Pay only for work you win"]) check(await shows(anon, t), `for-tailors shows ${t}`, `for-tailors missing ${t}`);
+for (const t of ["$39", "$79", "$169", "$309", "$9", "$99", "Pay only for work you win"]) check(await shows(anon, t), `for-tailors shows ${t}`, `for-tailors missing ${t}`);
 await anon.screenshot({ path: SHOTS + "plans-for-tailors-400.png", fullPage: true });
 
 const admin = await login("admin@example.com");

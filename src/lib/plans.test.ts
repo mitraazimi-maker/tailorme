@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { EXTRA_JOB_CENTS, FEATURED, PILOT, PLANS, TIERS, getsPilotTrial, inFreePeriod, pilotFreeUntil, cheapestFor, creditsFor, featuredSpotsLeft, hasCredit, monthEnd, monthKey, monthStart, prevMonthKey, rollover } from "./plans";
 
 it("prices and allowances are as decided", () => {
-  expect(TIERS.map((t) => [PLANS[t].jobs, PLANS[t].priceCents])).toEqual([[5, 2900], [12, 5900], [25, 12900], [50, 23900]]);
-  expect(EXTRA_JOB_CENTS).toBe(700);
-  expect([FEATURED.priceCents, FEATURED.perSuburb]).toEqual([7900, 3]);
+  expect(TIERS.map((t) => [PLANS[t].jobs, PLANS[t].priceCents])).toEqual([[5, 3900], [12, 7900], [25, 16900], [50, 30900]]);
+  expect(EXTRA_JOB_CENTS).toBe(900);
+  expect([FEATURED.priceCents, FEATURED.perSuburb]).toEqual([9900, 3]);
 });
 
 describe("extra jobs never undercut the next plan for regular overflow", () => {
@@ -15,10 +15,10 @@ describe("extra jobs never undercut the next plan for regular overflow", () => {
     }
   });
   it("picks the cheapest mix", () => {
-    expect(cheapestFor(4)).toMatchObject({ tier: "STARTER", extras: 0, cents: 2900 });
-    expect(cheapestFor(18)).toMatchObject({ tier: "PRO", extras: 6, cents: 5900 + 6 * 700 });
+    expect(cheapestFor(4)).toMatchObject({ tier: "STARTER", extras: 0, cents: 3900 });
+    expect(cheapestFor(18)).toMatchObject({ tier: "PRO", extras: 6, cents: 7900 + 6 * 900 });
     expect(cheapestFor(45)).toMatchObject({ tier: "STUDIO", extras: 0 });
-    expect(cheapestFor(90)).toMatchObject({ tier: "STUDIO", extras: 40, cents: 23900 + 40 * 700 });
+    expect(cheapestFor(90)).toMatchObject({ tier: "STUDIO", extras: 40, cents: 30900 + 40 * 900 });
   });
 });
 
