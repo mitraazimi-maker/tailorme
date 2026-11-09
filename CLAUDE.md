@@ -108,7 +108,8 @@ Not built yet: real email (`src/lib/notify.ts` only logs), cloud photo storage (
 
 ## Market facts from the owner (9 Nov 2026)
 
-- The owner's own business does about **$5M a year of alterations in Sydney**, under 10% of the market, at about **$200 a job** (high-end; under 5% is bridal or bespoke). So the Sydney market is at least ~$50M a year.
+- The owner's own business does about **$5M a year of alterations in Sydney** at about **$200 a job** (high-end; under 5% is bridal or bespoke).
+- Working assumption (9 Nov 2026): the **Australian alterations market is about $125M a year**, Sydney ~30% of it (~$37.5M, ~540,000 jobs). On that, tailor me peaks at ~$56k profit at full Sydney scale as built (~$141k run lean) and national expansion loses money; see the business outlook report.
 - **Normal alteration shops average about $60 a job.** The price guide in `src/lib/catalog.ts` uses this.
 - tailor me's at-home pitch reaches the same customers who pay ~$200; whether it may take some of them is an open decision.
 
